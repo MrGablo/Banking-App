@@ -138,12 +138,17 @@ paths:
           schema:
             type: string
       requestBody:
+        required: true
         content:
           application/json:
             schema:
+              type: object
               properties:
                 absoluteLimit: { type: number }
                 dailyLimit: { type: number }
+              anyOf:
+                - required: [absoluteLimit]
+                - required: [dailyLimit]
       responses:
         '200':
           description: Updated
