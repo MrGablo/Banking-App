@@ -9,8 +9,8 @@ info:
     - **Security**: JWT Bearer Token required for most routes.
 
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Local Development Server
+  - url: /api/v1
+    description: API base path
 
 components:
   securitySchemes:
