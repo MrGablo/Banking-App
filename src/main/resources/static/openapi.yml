@@ -62,8 +62,7 @@ components:
           example: 75.00
         timestamp:
           type: string
-          format: date-time
-          example: "2026-04-20T14:00:00Z"
+          example: "2026-04-20T14:00:00"
         userInitiating:
           type: string
           example: "j.doe@example.com"
