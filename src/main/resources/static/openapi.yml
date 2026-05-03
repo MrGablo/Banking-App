@@ -1,0 +1,240 @@
+openapi: 3.0.3
+info:
+  title: NeoBank Core API
+  version: 1.0.0
+  description: |
+    REST API for the NeoBank banking application.
+    - **Currency**: EUR.
+    - **IBAN Format**: `NLxxINHO0xxxxxxxxx`.
+    - **Security**: JWT Bearer Token required for most routes.
+
+servers:
+  - url: /api/v1
+    description: API base path
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Account:
+      type: object
+      properties:
+        iban:
+          type: string
+          pattern: '^NL[0-9]{2}INHO0[0-9]{9}$'
+          example: "NL01INHO0123456789"
+        type:
+          type: string
+          enum: [CHECKING, SAVINGS]
+        balance:
+          type: number
+          format: double
+          example: 1250.50
+        absoluteLimit:
+          type: number
+          example: -50.00
+        dailyLimit:
+          type: number
+          example: 500.00
+        active:
+          type: boolean
+          example: true
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1001
+        fromIban:
+          type: string
+          example: "NL01INHO0111111111"
+        toIban:
+          type: string
+          example: "NL01INHO0222222222"
+        amount:
+          type: number
+          format: double
+          example: 75.00
+        timestamp:
+          type: string
+          example: "2026-04-20T14:00:00"
+        userInitiating:
+          type: string
+          example: "j.doe@example.com"
+
+paths:
+  /auth/login:
+    post:
+      summary: User Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: "j.doe@example.com" }
+                password: { type: string, example: "password123" }
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  token: { type: string }
+
+  /auth/register:
+    post:
+      summary: Customer Signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, bsn, password]
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                email: { type: string }
+                bsn: { type: string, example: "123456789" }
+                password: { type: string }
+      responses:
+        '201':
+          description: Registered
+
+  /accounts:
+    get:
+      summary: Get list of accounts
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+
+  /accounts/{iban}/limits:
+    put:
+      summary: Update limits (Employee only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: iban
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                absoluteLimit: { type: number }
+                dailyLimit: { type: number }
+              anyOf:
+                - required: [absoluteLimit]
+                - required: [dailyLimit]
+      responses:
+        '200':
+          description: Updated
+
+  /transactions:
+    get:
+      summary: Search transactions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+        - name: iban
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  totalPages:
+                    type: integer
+    post:
+      summary: Transfer funds
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fromIban, toIban, amount]
+              properties:
+                fromIban: { type: string }
+                toIban: { type: string }
+                amount: { type: number }
+      responses:
+        '201':
+          description: Created
+        '403':
+          description: Limit Exceeded
+
+  /employees/approve/{userId}:
+    post:
+      summary: Approve customer and create accounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Accounts created (Checking & Savings)
+
+  /atm/transaction:
+    post:
+      summary: ATM Deposit/Withdrawal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [iban, amount, type]
+              properties:
+                iban: { type: string }
+                amount: { type: number }
+                type: { type: string, enum: [DEPOSIT, WITHDRAWAL] }
+      responses:
+        '200':
+          description: Success
