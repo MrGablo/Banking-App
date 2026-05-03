@@ -6,11 +6,13 @@ import com.example.demo.models.Transaction;
 import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.TransactionRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Profile("seed")
 @Component
 public class DataSeeder implements CommandLineRunner {
     private final AccountRepository accountRepository;
@@ -37,5 +39,3 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 }
-
-

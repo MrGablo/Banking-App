@@ -5,9 +5,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "transactions")
 public class Transaction {
@@ -38,28 +42,5 @@ public class Transaction {
         this.userInitiating = userInitiating;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getFromIban() {
-        return fromIban;
-    }
-
-    public String getToIban() {
-        return toIban;
-    }
-
-    public double getAmount() {
-        return amount;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public String getUserInitiating() {
-        return userInitiating;
-    }
 }
 

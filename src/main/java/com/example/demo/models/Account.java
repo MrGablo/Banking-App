@@ -6,7 +6,11 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "accounts")
 public class Account {
@@ -38,44 +42,5 @@ public class Account {
         this.active = active;
     }
 
-    public String getIban() {
-        return iban;
-    }
-
-    public AccountType getType() {
-        return type;
-    }
-
-    public double getBalance() {
-        return balance;
-    }
-
-    public double getAbsoluteLimit() {
-        return absoluteLimit;
-    }
-
-    public double getDailyLimit() {
-        return dailyLimit;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setBalance(double balance) {
-        this.balance = balance;
-    }
-
-    public void setAbsoluteLimit(double absoluteLimit) {
-        this.absoluteLimit = absoluteLimit;
-    }
-
-    public void setDailyLimit(double dailyLimit) {
-        this.dailyLimit = dailyLimit;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
 }
 

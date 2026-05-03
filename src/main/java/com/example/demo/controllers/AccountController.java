@@ -2,6 +2,7 @@ package com.example.demo.controllers;
 
 import com.example.demo.models.Account;
 import com.example.demo.services.AccountService;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Optional;
 
+@Profile("legacy")
 @RestController
 @RequestMapping("/api/v1/accounts")
 @CrossOrigin(origins = "${app.cors.allowed-origin:http://localhost:5173}")
@@ -49,7 +51,3 @@ public class AccountController {
                 : ResponseEntity.notFound().build();
     }
 }
-
-
-
-

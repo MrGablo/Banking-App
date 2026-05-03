@@ -2,6 +2,7 @@ package com.example.demo.controllers;
 
 import com.example.demo.models.Transaction;
 import com.example.demo.services.TransactionService;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Profile("legacy")
 @RestController
 @RequestMapping("/api/v1/transactions")
 @CrossOrigin(origins = "${app.cors.allowed-origin:http://localhost:5173}")
@@ -48,6 +50,3 @@ public class TransactionController {
                 : ResponseEntity.<Object>notFound().build();
     }
 }
-
-
-
