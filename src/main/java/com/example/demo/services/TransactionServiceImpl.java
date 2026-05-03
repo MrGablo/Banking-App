@@ -32,7 +32,11 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public boolean deleteTransaction(long id) {
-        return transactionRepository.deleteById(id);
+        if (transactionRepository.existsById(id)) {
+            transactionRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }
 

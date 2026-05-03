@@ -1,19 +1,12 @@
 package com.example.demo.repositories;
 
 import com.example.demo.models.Transaction;
+import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-
-@SuppressWarnings("unused")
-public interface TransactionRepository {
-    List<Transaction> findAll();
-
-    Optional<Transaction> findById(long id);
-
-    Transaction save(Transaction transaction);
-
-    boolean deleteById(long id);
+@Repository
+public interface TransactionRepository extends ListCrudRepository<Transaction, Long> {
+    // Spring Data provides CRUD methods; keep this interface so Spring can generate the implementation.
 }
 
 

@@ -1,7 +1,6 @@
 package com.example.demo.repositories;
 
 import com.example.demo.models.Transaction;
-import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,8 +10,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Repository
-public class InMemoryTransactionRepository implements TransactionRepository {
+// Legacy in-memory transaction store kept for development/seeding. Not registered as a Spring @Repository
+public class InMemoryTransactionRepository {
     private final Map<Long, Transaction> transactions = new LinkedHashMap<>();
     private final AtomicLong sequence = new AtomicLong(1L);
 
@@ -21,17 +20,14 @@ public class InMemoryTransactionRepository implements TransactionRepository {
         save(new Transaction(null, "NL02INHO0987654321", "NL01INHO0123456789", 25.00, LocalDateTime.now().minusHours(4), "j.doe@example.com"));
     }
 
-    @Override
     public synchronized List<Transaction> findAll() {
         return new ArrayList<>(transactions.values());
     }
 
-    @Override
     public synchronized Optional<Transaction> findById(long id) {
         return Optional.ofNullable(transactions.get(id));
     }
 
-    @Override
     public synchronized Transaction save(Transaction transaction) {
         Long id = transaction.id() == null ? sequence.getAndIncrement() : transaction.id();
         Transaction stored = new Transaction(id, transaction.fromIban(), transaction.toIban(), transaction.amount(), transaction.timestamp(), transaction.userInitiating());
@@ -40,7 +36,6 @@ public class InMemoryTransactionRepository implements TransactionRepository {
         return stored;
     }
 
-    @Override
     public synchronized boolean deleteById(long id) {
         return transactions.remove(id) != null;
     }

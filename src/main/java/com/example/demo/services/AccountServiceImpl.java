@@ -22,7 +22,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Optional<Account> getAccountByIban(String iban) {
-        return accountRepository.findByIban(iban);
+        return accountRepository.findById(iban);
     }
 
     @Override
@@ -32,7 +32,11 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public boolean deleteAccount(String iban) {
-        return accountRepository.deleteByIban(iban);
+        if (accountRepository.existsById(iban)) {
+            accountRepository.deleteById(iban);
+            return true;
+        }
+        return false;
     }
 }
 

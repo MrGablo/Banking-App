@@ -1,17 +1,11 @@
 package com.example.demo.repositories;
 
 import com.example.demo.models.Account;
+import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-
-public interface AccountRepository {
-    List<Account> findAll();
-
-    Optional<Account> findByIban(String iban);
-
-    Account save(Account account);
-
-    boolean deleteByIban(String iban);
+@Repository
+public interface AccountRepository extends ListCrudRepository<Account, String> {
+    // Spring Data provides: findAll(), findById(String), save(Account), deleteById(String), etc.
 }
 
