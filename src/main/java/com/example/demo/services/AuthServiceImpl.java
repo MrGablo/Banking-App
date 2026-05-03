@@ -21,6 +21,9 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalArgumentException("Email already in use");
         }
+        if (userRepository.findByBsn(request.bsn()).isPresent()) {
+            throw new IllegalArgumentException("BSN already in use");
+        }
         User user = new User(
                 request.firstName(),
                 request.lastName(),

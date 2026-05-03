@@ -5,6 +5,7 @@ import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
 import com.example.demo.services.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +30,8 @@ public class AuthController {
             return ResponseEntity.status(201).build();
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(409).body(ex.getMessage());
+        } catch (DataIntegrityViolationException ex) {
+            return ResponseEntity.status(409).body("A user with the provided email or BSN already exists");
         }
     }
 
