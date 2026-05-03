@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 public class TransferServiceImpl implements TransferService {
@@ -28,6 +29,10 @@ public class TransferServiceImpl implements TransferService {
     @Override
     @Transactional
     public Transaction transferBetweenOwnAccounts(TransferRequest request) {
+        if (Objects.equals(request.fromIban(), request.toIban())) {
+            throw new IllegalArgumentException("Source and destination accounts must be different");
+        }
+
         User user = userRepository.findByEmail(request.userEmail())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

@@ -27,7 +27,7 @@ public class TransferController {
             Transaction transaction = transferService.transferBetweenOwnAccounts(request);
             return ResponseEntity.status(201).body(transaction);
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(404).body(ex.getMessage());
+            return ResponseEntity.status(400).body(ex.getMessage());
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(403).body(ex.getMessage());
         }
