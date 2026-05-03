@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,9 @@ public class Account {
 
     private boolean active;
 
+    @ManyToOne
+    private User owner;
+
     protected Account() {
         // JPA only
     }
@@ -43,4 +47,3 @@ public class Account {
     }
 
 }
-
