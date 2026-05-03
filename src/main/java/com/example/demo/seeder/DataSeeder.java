@@ -10,6 +10,7 @@ import com.example.demo.repositories.TransactionRepository;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,18 +22,20 @@ public class DataSeeder implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(AccountRepository accountRepository, TransactionRepository transactionRepository, UserRepository userRepository) {
+    public DataSeeder(AccountRepository accountRepository, TransactionRepository transactionRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
         if (userRepository.count() == 0) {
-            User demoUser = new User("Jane", "Doe", "jane.doe@example.com", "123456789", "+31612345678", "password123", UserRole.CUSTOMER, true);
+            User demoUser = new User("Jane", "Doe", "jane.doe@example.com", "123456789", "+31612345678", passwordEncoder.encode("password123"), UserRole.CUSTOMER, true);
             userRepository.save(demoUser);
 
             Account a1 = new Account("NL01INHO0123456789", AccountType.CHECKING, 1250.50, -50.00, 500.00, true);
