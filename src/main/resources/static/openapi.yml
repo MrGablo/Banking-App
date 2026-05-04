@@ -3,7 +3,7 @@ info:
   title: NeoBank Core API
   version: 1.0.0
   description: |
-    REST API for the NeoBank banking application. 
+    REST API for the NeoBank banking application.
     - **Currency**: EUR.
     - **IBAN Format**: `NLxxINHO0xxxxxxxxx`.
     - **Security**: JWT Bearer Token required for most routes.
@@ -62,8 +62,7 @@ components:
           example: 75.00
         timestamp:
           type: string
-          format: date-time
-          example: "2026-04-20T14:00:00Z"
+          example: "2026-04-20T14:00:00"
         userInitiating:
           type: string
           example: "j.doe@example.com"
