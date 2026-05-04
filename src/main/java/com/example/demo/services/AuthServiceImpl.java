@@ -9,14 +9,18 @@ import com.example.demo.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -49,8 +53,11 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Invalid credentials");
         }
 
+        String token = jwtService.generateToken(
+                user.getEmail(),
+                Map.of("role", user.getRole().name(), "approved", user.isApproved()));
         String message = user.isApproved() ? "Welcome back" : "Welcome back - pending approval";
-        return new AuthResponse(message, user.isApproved());
+        return new AuthResponse(message, user.isApproved(), token);
     }
 }
 
