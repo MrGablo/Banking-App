@@ -8,13 +8,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
+
 @Entity
 @Table(name = "users")
+@Data
+@NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,9 +39,6 @@ public class User {
 
     private boolean approved;
 
-    protected User() {
-        // JPA only
-    }
 
     public User(String firstName, String lastName, String email, String bsn, String phoneNumber, String passwordHash, UserRole role, boolean approved) {
         this.firstName = firstName;

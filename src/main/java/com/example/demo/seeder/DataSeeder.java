@@ -38,10 +38,8 @@ public class DataSeeder implements CommandLineRunner {
             User demoUser = new User("Jane", "Doe", "jane.doe@example.com", "123456789", "+31612345678", passwordEncoder.encode("password123"), UserRole.CUSTOMER, true);
             userRepository.save(demoUser);
 
-            Account a1 = new Account("NL01INHO0123456789", AccountType.CHECKING, 1250.50, -50.00, 500.00, true);
-            a1.setOwner(demoUser);
-            Account a2 = new Account("NL02INHO0987654321", AccountType.SAVINGS, 4200.00, 0.00, 0.00, true);
-            a2.setOwner(demoUser);
+            Account a1 = new Account("NL01INHO0123456789", AccountType.CHECKING, 1250.50, -50.00, 500.00, true, demoUser);
+            Account a2 = new Account("NL02INHO0987654321", AccountType.SAVINGS, 4200.00, 0.00, 0.00, true, demoUser);
             accountRepository.save(a1);
             accountRepository.save(a2);
 
