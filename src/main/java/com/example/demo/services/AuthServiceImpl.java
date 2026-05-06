@@ -3,6 +3,7 @@ package com.example.demo.services;
 import com.example.demo.dtos.AuthResponse;
 import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
+import com.example.demo.dtos.UserDTO;
 import com.example.demo.models.User;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,5 +53,13 @@ public class AuthServiceImpl implements AuthService {
         String message = user.isApproved() ? "Welcome back" : "Welcome back - pending approval";
         return new AuthResponse(message, user.isApproved(), token);
     }
+
+    @Override
+    public UserDTO getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return userMapper.toDTO(user);
+    }
 }
+
 
