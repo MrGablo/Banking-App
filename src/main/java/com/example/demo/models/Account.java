@@ -7,13 +7,15 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Setter
-@Getter
+@Data
 @Entity
 @Table(name = "accounts")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Account {
     @Id
     @Column(length = 34)
@@ -32,18 +34,5 @@ public class Account {
 
     @ManyToOne
     private User owner;
-
-    protected Account() {
-        // JPA only
-    }
-
-    public Account(String iban, AccountType type, double balance, double absoluteLimit, double dailyLimit, boolean active) {
-        this.iban = iban;
-        this.type = type;
-        this.balance = balance;
-        this.absoluteLimit = absoluteLimit;
-        this.dailyLimit = dailyLimit;
-        this.active = active;
-    }
 
 }
