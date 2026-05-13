@@ -3,11 +3,12 @@ package com.example.demo.services;
 import com.example.demo.dtos.AuthResponse;
 import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
+import com.example.demo.dtos.UserDTO;
 import com.example.demo.models.User;
-import com.example.demo.models.UserRole;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.demo.mapper.UserMapper;
 
 import java.util.Map;
 
@@ -16,11 +17,13 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
-    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -31,16 +34,7 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.findByBsn(request.bsn()).isPresent()) {
             throw new IllegalArgumentException("BSN already in use");
         }
-        User user = new User(
-                request.firstName(),
-                request.lastName(),
-                request.email(),
-                request.bsn(),
-                request.phoneNumber(),
-                passwordEncoder.encode(request.password()),
-                UserRole.CUSTOMER,
-                false
-        );
+        User user = userMapper.toEntity(request);
         userRepository.save(user);
     }
 
@@ -59,5 +53,13 @@ public class AuthServiceImpl implements AuthService {
         String message = user.isApproved() ? "Welcome back" : "Welcome back - pending approval";
         return new AuthResponse(message, user.isApproved(), token);
     }
+
+    @Override
+    public UserDTO getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return userMapper.toDTO(user);
+    }
 }
+
 

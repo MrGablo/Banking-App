@@ -40,4 +40,13 @@ public class JwtService {
                 .signWith(signingKey)
                 .compact();
     }
+
+    public String extractSubject(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
 }
