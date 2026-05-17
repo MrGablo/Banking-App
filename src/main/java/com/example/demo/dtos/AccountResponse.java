@@ -1,14 +1,16 @@
 package com.example.demo.dtos;
 
-import com.example.demo.models.Account;
-import com.example.demo.models.AccountType;
+import com.example.demo.entity.Account;
+import com.example.demo.common.enums.AccountType;
+
+import java.math.BigDecimal;
 
 public record AccountResponse(
         String iban,
         AccountType type,
-        double balance,
-        double absoluteLimit,
-        double dailyLimit,
+        BigDecimal balance,
+        BigDecimal absoluteLimit,
+        BigDecimal dailyLimit,
         boolean active,
         Long ownerId,
         String ownerName

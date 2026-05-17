@@ -1,24 +1,38 @@
 package com.example.demo.controllers;
 
+import com.example.demo.common.pagination.PageResponse;
+import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
-import com.example.demo.models.Transaction;
+import com.example.demo.entity.Transaction;
+import com.example.demo.services.TransactionService;
 import com.example.demo.services.TransferService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
 @CrossOrigin(origins = "${app.cors.allowed-origin:http://localhost:5173}")
 public class TransferController {
     private final TransferService transferService;
+    private final TransactionService transactionService;
 
-    public TransferController(TransferService transferService) {
+    public TransferController(TransferService transferService, TransactionService transactionService) {
         this.transferService = transferService;
+        this.transactionService = transactionService;
+    }
+
+    @PostMapping("/transfer-checking")
+    public ResponseEntity<?> transferChecking(@Valid @RequestBody TransferRequest request) {
+        try {
+            Transaction transaction = transferService.transferFromCheckingToChecking(request);
+            return ResponseEntity.status(201).body(transaction);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(400).body(ex.getMessage());
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(403).body(ex.getMessage());
+        }
     }
 
     @PostMapping("/transfer")
@@ -31,6 +45,15 @@ public class TransferController {
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(403).body(ex.getMessage());
         }
+    }
+
+    @GetMapping
+    public PageResponse<TransactionResponse> getAllTransactions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return PageResponse.of(
+                transactionService.getAllTransactions(PageRequest.of(page, Math.min(size, 100)))
+        );
     }
 }
 

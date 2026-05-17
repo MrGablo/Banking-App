@@ -1,7 +1,7 @@
 package com.example.demo.dtos;
 
-import com.example.demo.models.User;
-import com.example.demo.models.UserRole;
+import com.example.demo.entity.User;
+import com.example.demo.common.enums.UserRole;
 
 public record UserResponse(
         Long id,

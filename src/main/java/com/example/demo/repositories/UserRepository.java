@@ -1,7 +1,7 @@
 package com.example.demo.repositories;
 
-import com.example.demo.models.User;
-import com.example.demo.models.UserRole;
+import com.example.demo.entity.User;
+import com.example.demo.common.enums.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     Optional<User> findByBsn(String bsn);
+
+    Optional<User> findByPhoneNumber(String phoneNumber);
 
     Page<User> findByRole(UserRole role, Pageable pageable);
 

@@ -1,23 +1,24 @@
 package com.example.demo.services;
 
-import com.example.demo.models.Transaction;
+import com.example.demo.common.exception.NotFoundException;
+import com.example.demo.dtos.TransactionResponse;
+import com.example.demo.entity.Transaction;
+import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.TransactionRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
+    private final AccountRepository accountRepository;
 
-    public TransactionServiceImpl(TransactionRepository transactionRepository) {
+    public TransactionServiceImpl(TransactionRepository transactionRepository, AccountRepository accountRepository) {
         this.transactionRepository = transactionRepository;
-    }
-
-    @Override
-    public List<Transaction> getAllTransactions() {
-        return transactionRepository.findAll();
+        this.accountRepository = accountRepository;
     }
 
     @Override
@@ -38,5 +39,31 @@ public class TransactionServiceImpl implements TransactionService {
         }
         return false;
     }
+
+    @Override
+    public Page<TransactionResponse> getAllTransactions(Pageable pageable) {
+        //requireEmployee();
+        return transactionRepository.findAll(pageable)
+                .map(TransactionResponse::from);
+    }
+
+
+    @Override
+    public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable) {
+        //requireEmployee();
+
+        if (!accountRepository.existsByIban(iban)) {
+            throw new NotFoundException("Account not found: " + iban);
+        }
+
+        return transactionRepository.findByFromIbanOrToIban(iban, iban, pageable)
+                .map(TransactionResponse::from);
+    }
+
+//    private void requireEmployee() {
+//        if (authContext.getCurrentUserRole() != UserRole.EMPLOYEE) {
+//            throw new ForbiddenException("Employee role required");
+//        }
+//    }
 }
 

@@ -1,14 +1,15 @@
 package com.example.demo.dtos;
 
-import com.example.demo.models.Transaction;
+import com.example.demo.entity.Transaction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record TransactionResponse(
         Long id,
         String fromIban,
         String toIban,
-        double amount,
+        BigDecimal amount,
         LocalDateTime timestamp,
         String userInitiating
 ) {
@@ -18,7 +19,7 @@ public record TransactionResponse(
                 transaction.getFromIban(),
                 transaction.getToIban(),
                 transaction.getAmount(),
-                transaction.getTimestamp(),
+                LocalDateTime.now(),
                 transaction.getUserInitiating()
         );
     }

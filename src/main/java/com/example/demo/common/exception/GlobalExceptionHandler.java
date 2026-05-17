@@ -40,6 +40,21 @@ public class GlobalExceptionHandler {
                 .body(errorBody(exception.getStatus().value(), exception.getMessage()));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException exception) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(errorBody(HttpStatus.CONFLICT.value(), exception.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateException.class)
+    public ResponseEntity<Map<String, Object>> DuplicateException(DuplicateException exception) {
+        return ResponseEntity
+                .status( exception.getStatus())
+                .body(errorBody(exception.getStatus().value(), exception.getMessage()));
+    }
+
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException exception) {
         String message = exception.getBindingResult().getFieldErrors().stream()

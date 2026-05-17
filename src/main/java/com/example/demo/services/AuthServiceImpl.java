@@ -1,15 +1,17 @@
 package com.example.demo.services;
 
+import com.example.demo.common.exception.DuplicateException;
 import com.example.demo.dtos.AuthResponse;
 import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
-import com.example.demo.models.User;
-import com.example.demo.models.UserRole;
+import com.example.demo.entity.User;
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -31,16 +33,19 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.findByBsn(request.bsn()).isPresent()) {
             throw new IllegalArgumentException("BSN already in use");
         }
-        User user = new User(
-                request.firstName(),
-                request.lastName(),
-                request.email(),
-                request.bsn(),
-                request.phoneNumber(),
-                passwordEncoder.encode(request.password()),
-                UserRole.CUSTOMER,
-                false
-        );
+        if (userRepository.findByPhoneNumber(request.phoneNumber()).isPresent()) {
+            throw new IllegalArgumentException("PhoneNumber already in use");
+        }
+
+        User user = new User();
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setEmail(request.email());
+        user.setBsn(request.bsn());
+        user.setPhoneNumber(request.phoneNumber());
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setRole(UserRole.CUSTOMER);
+        user.setApproved(false);
         userRepository.save(user);
     }
 
