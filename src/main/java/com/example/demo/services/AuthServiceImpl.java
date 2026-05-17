@@ -4,11 +4,13 @@ import com.example.demo.common.exception.DuplicateException;
 import com.example.demo.dtos.AuthResponse;
 import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
+import com.example.demo.dtos.UserDTO;
 import com.example.demo.entity.User;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.demo.mapper.UserMapper;
 
 import java.util.Map;
 import java.util.Optional;
@@ -18,11 +20,13 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
-    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -37,15 +41,7 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("PhoneNumber already in use");
         }
 
-        User user = new User();
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setEmail(request.email());
-        user.setBsn(request.bsn());
-        user.setPhoneNumber(request.phoneNumber());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setRole(UserRole.CUSTOMER);
-        user.setApproved(false);
+        User user = userMapper.toEntity(request);
         userRepository.save(user);
     }
 
@@ -63,6 +59,13 @@ public class AuthServiceImpl implements AuthService {
                 Map.of("role", user.getRole().name(), "approved", user.isApproved()));
         String message = user.isApproved() ? "Welcome back" : "Welcome back - pending approval";
         return new AuthResponse(message, user.isApproved(), token);
+    }
+
+    @Override
+    public UserDTO getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return userMapper.toDTO(user);
     }
 }
 

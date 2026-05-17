@@ -4,23 +4,22 @@ import com.example.demo.dtos.AuthResponse;
 import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
 import com.example.demo.services.AuthService;
+import com.example.demo.services.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = "${app.cors.allowed-origin:http://localhost:5173}")
 public class AuthController {
     private final AuthService authService;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtService jwtService) {
         this.authService = authService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -44,5 +43,25 @@ public class AuthController {
             return ResponseEntity.status(401).body(ex.getMessage());
         }
     }
+    
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Missing or invalid Authorization header");
+            }
+            
+            String token = authHeader.substring(7); // Remove "Bearer " prefix
+            String email = jwtService.extractSubject(token);
+            
+            return ResponseEntity.ok(authService.getCurrentUser(email));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(401).body(ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.status(401).body("Invalid token");
+        }
+    }
 }
+
+
 
