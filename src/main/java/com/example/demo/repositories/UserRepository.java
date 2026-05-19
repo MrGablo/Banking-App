@@ -23,6 +23,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Page<User> findByRoleAndApproved(UserRole role, boolean approved, Pageable pageable);
 
+    @Query("""
+            SELECT u FROM User u
+            WHERE LOWER(u.firstName) LIKE LOWER(CONCAT('%', :firstName, '%'))
+              AND LOWER(u.lastName) LIKE LOWER(CONCAT('%', :lastName, '%'))
+              AND u.role = 'CUSTOMER'
+              AND u.approved = true
+            """)
+    Page<User> searchCustomers(String firstName, String lastName, Pageable pageable);
+
     @Query("SELECT u FROM User u WHERE u.role = 'CUSTOMER' AND u.id NOT IN (SELECT DISTINCT a.owner.id FROM Account a)")
     Page<User> findCustomersWithoutAccounts(Pageable pageable);
 }

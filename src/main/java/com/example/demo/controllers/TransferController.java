@@ -4,12 +4,15 @@ import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Transaction;
+import com.example.demo.entity.User;
 import com.example.demo.services.TransactionService;
 import com.example.demo.services.TransferService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,14 +28,20 @@ public class TransferController {
     }
 
     @PostMapping("/transfer-checking")
-    public ResponseEntity<Transaction> transferChecking(@Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transferService.transferFromCheckingToChecking(request);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Transaction> transferChecking(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transferService.transferFromCheckingToChecking(currentUser, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<Transaction> transfer(@Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transferService.transferBetweenOwnAccounts(request);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Transaction> transfer(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transferService.transferBetweenOwnAccounts(currentUser, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
