@@ -19,7 +19,7 @@ public record TransactionResponse(
                 transaction.getFromIban(),
                 transaction.getToIban(),
                 transaction.getAmount(),
-                LocalDateTime.now(),
+                transaction.getCreatedAt(),
                 transaction.getUserInitiating()
         );
     }
