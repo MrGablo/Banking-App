@@ -1,9 +1,9 @@
 package com.example.demo.mapper;
 
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.dtos.RegisterRequest;
 import com.example.demo.dtos.UserDTO;
-import com.example.demo.models.User;
-import com.example.demo.models.UserRole;
+import com.example.demo.entity.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -22,16 +22,17 @@ public class UserMapper {
 
         String hashedPassword = passwordEncoder.encode(request.password());
 
-        return new User(
-                request.firstName(),
-                request.lastName(),
-                request.email(),
-                request.bsn(),
-                request.phoneNumber(),
-                hashedPassword,
-                UserRole.CUSTOMER,
-                false
-        );
+        User user = new User();
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setEmail(request.email());
+        user.setBsn(request.bsn());
+        user.setPhoneNumber(request.phoneNumber());
+        user.setRole(UserRole.CUSTOMER);
+        user.setApproved(false);
+        user.setPasswordHash(hashedPassword);
+
+        return user;
     }
 
     public UserDTO toDTO(User user) {

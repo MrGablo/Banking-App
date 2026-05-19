@@ -1,17 +1,25 @@
 package com.example.demo.services;
 
-import com.example.demo.models.Account;
+import com.example.demo.dtos.AccountResponse;
+import com.example.demo.dtos.UpdateLimitsRequest;
+import com.example.demo.entity.Account;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface AccountService {
-    List<Account> getAllAccounts();
 
     Optional<Account> getAccountByIban(String iban);
 
     Account addAccount(Account account);
 
     boolean deleteAccount(String iban);
+
+    public void closeAccount(String iban);
+
+    public void updateLimits(String iban, UpdateLimitsRequest request);
+
+    public Page<AccountResponse> getAllAccounts(Pageable pageable);
 }
 
