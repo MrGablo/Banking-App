@@ -70,7 +70,7 @@ public class DataSeeder implements CommandLineRunner {
             employeeUser.setApproved(true);
             userRepository.save(employeeUser);
 
-
+            // Admin-owned checking and savings accounts
             Account firstAccount = new Account();
             firstAccount.setIban("NL01INHO0123456789");
             firstAccount.setType(AccountType.CHECKING);
@@ -80,7 +80,6 @@ public class DataSeeder implements CommandLineRunner {
             firstAccount.setActive(true);
             firstAccount.setCurrency(Currency.EURO);
             firstAccount.setOwner(adminUser);
-
 
             Account secondAccount = new Account();
             secondAccount.setIban("NL02INHO0987654321");
@@ -92,9 +91,20 @@ public class DataSeeder implements CommandLineRunner {
             secondAccount.setCurrency(Currency.EURO);
             secondAccount.setOwner(adminUser);
 
+            // Demo (customer) account
+            Account thirdAccount = new Account();
+            thirdAccount.setIban("NL03INHO1234567890");
+            thirdAccount.setType(AccountType.CHECKING);
+            thirdAccount.setBalance(BigDecimal.valueOf(300.00));
+            thirdAccount.setAbsoluteLimit(BigDecimal.valueOf(100));
+            thirdAccount.setDailyLimit(BigDecimal.valueOf(200.00));
+            thirdAccount.setActive(true);
+            thirdAccount.setCurrency(Currency.EURO);
+            thirdAccount.setOwner(demoUser);
+
             accountRepository.save(firstAccount);
             accountRepository.save(secondAccount);
-
+            accountRepository.save(thirdAccount);
 
             Transaction firstTransaction = new Transaction();
             firstTransaction.setFromIban("NL01INHO0123456789");
@@ -105,7 +115,6 @@ public class DataSeeder implements CommandLineRunner {
             firstTransaction.setCurrency(Currency.EURO);
             firstTransaction.setDescription("");
 
-
             Transaction secondTransaction = new Transaction();
             secondTransaction.setFromIban("NL01INHO0123456789");
             secondTransaction.setToIban("NL02INHO0987654321");
@@ -114,6 +123,7 @@ public class DataSeeder implements CommandLineRunner {
             secondTransaction.setType(AccountType.CHECKING);
             secondTransaction.setCurrency(Currency.EURO);
             secondTransaction.setDescription("");
+
             transactionRepository.save(firstTransaction);
             transactionRepository.save(secondTransaction);
         }

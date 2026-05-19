@@ -76,9 +76,12 @@ public class GlobalExceptionHandler {
     }
 
     private Map<String, Object> errorBody(int status, String message) {
+        // Keep the existing `message` field for compatibility but also expose `error`
+        // so frontends that expect an `error` property can read a friendly string.
         return Map.of(
                 "status", status,
                 "message", message,
+                "error", message,
                 "timestamp", Instant.now().toString()
         );
     }
