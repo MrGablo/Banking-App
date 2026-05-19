@@ -1,19 +1,19 @@
 package com.example.demo.services;
 
 import com.example.demo.common.exception.DuplicateException;
+import com.example.demo.common.exception.NotFoundException;
+import com.example.demo.common.exception.UnauthorizedException;
 import com.example.demo.dtos.AuthResponse;
 import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
 import com.example.demo.dtos.UserDTO;
 import com.example.demo.entity.User;
-import com.example.demo.common.enums.UserRole;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.demo.mapper.UserMapper;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -32,13 +32,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void register(RegisterRequest request) {
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new DuplicateException("Email already in use");
         }
         if (userRepository.findByBsn(request.bsn()).isPresent()) {
-            throw new IllegalArgumentException("BSN already in use");
+            throw new DuplicateException("BSN already in use");
         }
         if (userRepository.findByPhoneNumber(request.phoneNumber()).isPresent()) {
-            throw new IllegalArgumentException("PhoneNumber already in use");
+            throw new DuplicateException("Phone number already in use");
         }
 
         User user = userMapper.toEntity(request);
@@ -48,10 +48,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         String token = jwtService.generateToken(
@@ -64,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserDTO getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
         return userMapper.toDTO(user);
     }
 }

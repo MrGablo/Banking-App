@@ -1,7 +1,6 @@
 package com.example.demo.services;
 
 import com.example.demo.common.exception.ConflictException;
-import com.example.demo.common.exception.DuplicateException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.ApproveCustomerRequest;
 import com.example.demo.dtos.UserResponse;
@@ -14,11 +13,9 @@ import com.example.demo.repositories.UserRepository;
 import com.example.demo.util.AccountUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService{

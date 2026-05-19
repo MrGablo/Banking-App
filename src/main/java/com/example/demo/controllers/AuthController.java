@@ -1,12 +1,14 @@
 package com.example.demo.controllers;
 
+import com.example.demo.common.exception.UnauthorizedException;
 import com.example.demo.dtos.AuthResponse;
 import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
+import com.example.demo.dtos.UserDTO;
 import com.example.demo.services.AuthService;
 import com.example.demo.services.JwtService;
 import jakarta.validation.Valid;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,45 +25,24 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        try {
-            authService.register(request);
-            return ResponseEntity.status(201).build();
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(409).body(ex.getMessage());
-        } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(409).body("A user with the provided email or BSN already exists");
-        }
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
+        authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        try {
-            AuthResponse response = authService.login(request);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(401).body(ex.getMessage());
-        }
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
-    
+
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
-        try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(401).body("Missing or invalid Authorization header");
-            }
-            
-            String token = authHeader.substring(7); // Remove "Bearer " prefix
-            String email = jwtService.extractSubject(token);
-            
-            return ResponseEntity.ok(authService.getCurrentUser(email));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(401).body(ex.getMessage());
-        } catch (Exception ex) {
-            return ResponseEntity.status(401).body("Invalid token");
+    public ResponseEntity<UserDTO> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Missing or invalid Authorization header");
         }
+
+        String token = authHeader.substring(7);
+        String email = jwtService.extractSubject(token);
+        return ResponseEntity.ok(authService.getCurrentUser(email));
     }
 }
-
-
-

@@ -24,7 +24,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Optional<Account> getAccountByIban(String iban) {
-        return accountRepository.findById(iban);
+        return accountRepository.findByIban(iban);
     }
 
     @Override
@@ -34,8 +34,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public boolean deleteAccount(String iban) {
-        if (accountRepository.existsById(iban)) {
-            accountRepository.deleteById(iban);
+        if (accountRepository.existsByIban(iban)) {
+            accountRepository.deleteByIban(iban);
             return true;
         }
         return false;
@@ -46,7 +46,7 @@ public class AccountServiceImpl implements AccountService {
     public void closeAccount(String iban) {
         //requireEmployee();
 
-        Account account = accountRepository.findById(iban)
+        Account account = accountRepository.findByIban(iban)
                 .orElseThrow(() -> new NotFoundException("Account not found: " + iban));
 
         if (!account.isActive()) {

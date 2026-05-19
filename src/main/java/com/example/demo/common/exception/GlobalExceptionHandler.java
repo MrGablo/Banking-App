@@ -43,8 +43,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException exception) {
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(errorBody(HttpStatus.CONFLICT.value(), exception.getMessage()));
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorBody(HttpStatus.BAD_REQUEST.value(), exception.getMessage()));
     }
 
     @ExceptionHandler(DuplicateException.class)

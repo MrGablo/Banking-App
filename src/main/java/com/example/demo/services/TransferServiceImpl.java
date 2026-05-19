@@ -1,5 +1,8 @@
 package com.example.demo.services;
 
+import com.example.demo.common.exception.ConflictException;
+import com.example.demo.common.exception.ForbiddenException;
+import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.common.enums.Currency;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.dtos.TransferRequest;
@@ -35,44 +38,44 @@ public class TransferServiceImpl implements TransferService {
     public Transaction transferFromCheckingToChecking(TransferRequest request){
 
         if (Objects.equals(request.fromIban(), request.toIban())) {
-            throw new IllegalArgumentException("Source and destination accounts must be different");
+            throw new ConflictException("Source and destination accounts must be different");
         }
 
         User user = userRepository.findByEmail(request.userEmail())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!user.isApproved()) {
-            throw new IllegalStateException("User is not approved");
+            throw new ForbiddenException("User is not approved");
         }
 
         if(user.getRole() != UserRole.EMPLOYEE){
-            throw new IllegalStateException("Only Employees are allowed");
+            throw new ForbiddenException("Only Employees are allowed");
         }
 
         Account from = accountRepository.findByIban(request.fromIban())
-                .orElseThrow(() -> new IllegalArgumentException("From account not found"));
+                .orElseThrow(() -> new NotFoundException("From account not found"));
 
         if(from.getType() != AccountType.CHECKING){
-            throw new IllegalStateException("Only Checking Accounts Allowed");
+            throw new ConflictException("Only Checking Accounts Allowed");
         }
 
         Account to = accountRepository.findByIban(request.toIban())
-                .orElseThrow(() -> new IllegalArgumentException("To account not found"));
+                .orElseThrow(() -> new NotFoundException("To account not found"));
 
 
         if(to.getType() != AccountType.CHECKING){
-            throw new IllegalStateException("Only Checking Accounts Allowed");
+            throw new ConflictException("Only Checking Accounts Allowed");
         }
 
         if(request.amount().compareTo(from.getBalance()) > 0){
-            throw new IllegalStateException("Insufficient Funds");
+            throw new ConflictException("Insufficient Funds");
 
         }
 
         //checking absolute Limit
         BigDecimal newBalance = from.getBalance().subtract(request.amount());
         if (newBalance.compareTo(from.getAbsoluteLimit()) < 0) {
-            throw new IllegalStateException("Absolute limit exceeded");
+            throw new ConflictException("Absolute limit exceeded");
         }
 
         //checking daily Limit
@@ -85,7 +88,7 @@ public class TransferServiceImpl implements TransferService {
         BigDecimal totalCurrentTransfer = totalTransferedAmount.add(request.amount());
 
         if (totalCurrentTransfer.compareTo(from.getDailyLimit()) > 0){
-            throw new IllegalStateException("Daily limit exceeded");
+            throw new ConflictException("Daily limit exceeded");
         }
 
         from.setBalance(newBalance);
@@ -111,32 +114,32 @@ public class TransferServiceImpl implements TransferService {
     @Transactional
     public Transaction transferBetweenOwnAccounts(TransferRequest request) {
         if (Objects.equals(request.fromIban(), request.toIban())) {
-            throw new IllegalArgumentException("Source and destination accounts must be different");
+            throw new ConflictException("Source and destination accounts must be different");
         }
 
         User user = userRepository.findByEmail(request.userEmail())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!user.isApproved()) {
-            throw new IllegalStateException("User is not approved");
+            throw new ForbiddenException("User is not approved");
         }
 
-        Account from = accountRepository.findById(request.fromIban())
-                .orElseThrow(() -> new IllegalArgumentException("From account not found"));
-        Account to = accountRepository.findById(request.toIban())
-                .orElseThrow(() -> new IllegalArgumentException("To account not found"));
+        Account from = accountRepository.findByIban(request.fromIban())
+                .orElseThrow(() -> new NotFoundException("From account not found"));
+        Account to = accountRepository.findByIban(request.toIban())
+                .orElseThrow(() -> new NotFoundException("To account not found"));
 
         if (from.getOwner() == null || to.getOwner() == null || !from.getOwner().getId().equals(user.getId()) || !to.getOwner().getId().equals(user.getId())) {
-            throw new IllegalStateException("Accounts do not belong to user");
+            throw new ForbiddenException("Accounts do not belong to user");
         }
 
         if (!isPersonalAccount(from.getType()) || !isPersonalAccount(to.getType())) {
-            throw new IllegalStateException("Transfers are allowed only between checking and savings accounts");
+            throw new ConflictException("Transfers are allowed only between checking and savings accounts");
         }
 
         BigDecimal newBalance = from.getBalance().subtract(request.amount());
-        if (newBalance.compareTo(from.getAbsoluteLimit()) > 0) {
-            throw new IllegalStateException("Absolute limit exceeded");
+        if (newBalance.compareTo(from.getAbsoluteLimit()) < 0) {
+            throw new ConflictException("Absolute limit exceeded");
         }
 
         from.setBalance(newBalance);
@@ -146,13 +149,13 @@ public class TransferServiceImpl implements TransferService {
         accountRepository.save(to);
 
         Transaction transaction = new Transaction();
-        transaction.setFromIban("NL01INHO0123456789");
-        transaction.setToIban("NL02INHO0987654321");
-        transaction.setAmount(BigDecimal.valueOf(75.00));
-        transaction.setUserInitiating("");
-        transaction.setType(AccountType.CHECKING);
-        transaction.setCurrency(Currency.EURO);
-        transaction.setDescription("");
+        transaction.setFromIban(from.getIban());
+        transaction.setToIban(to.getIban());
+        transaction.setAmount(request.amount());
+        transaction.setUserInitiating(user.getFirstName());
+        transaction.setType(from.getType());
+        transaction.setCurrency(from.getCurrency());
+        transaction.setDescription(request.description());
 
         return transactionRepository.save(transaction);
     }

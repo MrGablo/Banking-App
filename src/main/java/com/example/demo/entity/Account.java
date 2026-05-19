@@ -19,7 +19,7 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 34)
+    @Column(length = 34, nullable = false, unique = true)
     private String iban;
 
     @Enumerated(EnumType.STRING)

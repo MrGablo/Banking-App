@@ -8,6 +8,7 @@ import com.example.demo.services.TransactionService;
 import com.example.demo.services.TransferService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,27 +25,15 @@ public class TransferController {
     }
 
     @PostMapping("/transfer-checking")
-    public ResponseEntity<?> transferChecking(@Valid @RequestBody TransferRequest request) {
-        try {
-            Transaction transaction = transferService.transferFromCheckingToChecking(request);
-            return ResponseEntity.status(201).body(transaction);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(400).body(ex.getMessage());
-        } catch (IllegalStateException ex) {
-            return ResponseEntity.status(403).body(ex.getMessage());
-        }
+    public ResponseEntity<Transaction> transferChecking(@Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transferService.transferFromCheckingToChecking(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<?> transfer(@Valid @RequestBody TransferRequest request) {
-        try {
-            Transaction transaction = transferService.transferBetweenOwnAccounts(request);
-            return ResponseEntity.status(201).body(transaction);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(400).body(ex.getMessage());
-        } catch (IllegalStateException ex) {
-            return ResponseEntity.status(403).body(ex.getMessage());
-        }
+    public ResponseEntity<Transaction> transfer(@Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transferService.transferBetweenOwnAccounts(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
     @GetMapping
@@ -56,4 +45,3 @@ public class TransferController {
         );
     }
 }
-
