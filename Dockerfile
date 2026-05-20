@@ -1,7 +1,11 @@
-FROM ubuntu:latest AS build
-RUN apt-get update
-RUN apt-get install openjdk-21-jdk -y
-COPY . .
-RUN ./mvnw clean install -U
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B clean package -DskipTests
+
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+COPY --from=build /app/target/demo-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["./mvnw”,”spring-boot:run"]
+ENTRYPOINT ["java","-jar","/app/app.jar"]
