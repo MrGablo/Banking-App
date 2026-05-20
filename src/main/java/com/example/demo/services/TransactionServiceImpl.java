@@ -8,6 +8,8 @@ import com.example.demo.repositories.TransactionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import java.util.Optional;
 
@@ -58,6 +60,27 @@ public class TransactionServiceImpl implements TransactionService {
 
         return transactionRepository.findByFromIbanOrToIban(iban, iban, pageable)
                 .map(TransactionResponse::from);
+    }
+
+    @Override
+    public Page<TransactionResponse> searchTransactions(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            BigDecimal minAmount,
+            BigDecimal maxAmount,
+            BigDecimal exactAmount,
+            String iban,
+            Pageable pageable
+    ) {
+        return transactionRepository.searchTransactions(
+                startDate,
+                endDate,
+                minAmount,
+                maxAmount,
+                exactAmount,
+                iban,
+                pageable
+        ).map(TransactionResponse::from);
     }
 
 //    private void requireEmployee() {

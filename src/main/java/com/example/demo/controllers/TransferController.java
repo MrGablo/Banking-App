@@ -11,6 +11,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.Sort;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -35,13 +40,38 @@ public class TransferController {
         Transaction transaction = transferService.transferBetweenOwnAccounts(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
-
     @GetMapping
     public PageResponse<TransactionResponse> getAllTransactions(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime endDate,
+
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(required = false) BigDecimal exactAmount,
+            @RequestParam(required = false) String iban,
+
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size
+    ) {
         return PageResponse.of(
-                transactionService.getAllTransactions(PageRequest.of(page, Math.min(size, 100)))
+                transactionService.searchTransactions(
+                        startDate,
+                        endDate,
+                        minAmount,
+                        maxAmount,
+                        exactAmount,
+                        iban,
+                        PageRequest.of(
+                                page,
+                                Math.min(size, 100),
+                                Sort.by("createdAt").descending()
+                        )
+                )
         );
     }
 }
