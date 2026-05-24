@@ -15,6 +15,27 @@ import java.util.Objects;
 @Component
 public class TransferPolicy {
 
+    public BigDecimal validateCheckingToCheckingTransfer(User currentUser, TransferRequest request, Account from,
+                                                         Account to, BigDecimal totalTransferredAmount) {
+        enforceAuthenticatedUser(currentUser);
+        enforceDifferentAccounts(request);
+        enforceApprovedUser(currentUser);
+        enforceCheckingAccount(from);
+        enforceSourceAccountOwnership(currentUser, from);
+        enforceCheckingAccount(to);
+        return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
+    }
+
+    public BigDecimal validateOwnAccountTransfer(User currentUser, TransferRequest request, Account from, Account to,
+                                                 BigDecimal totalTransferredAmount) {
+        enforceAuthenticatedUser(currentUser);
+        enforceDifferentAccounts(request);
+        enforceApprovedUser(currentUser);
+        enforceAccountsBelongToUser(currentUser, from, to);
+        enforcePersonalAccounts(from, to);
+        return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
+    }
+
     public void enforceAuthenticatedUser(User currentUser) {
         if (currentUser == null) {
             throw new UnauthorizedException("Not authenticated");
@@ -73,6 +94,12 @@ public class TransferPolicy {
         if (totalCurrentTransfer.compareTo(from.getDailyLimit()) > 0) {
             throw new ConflictException("Daily limit exceeded");
         }
+    }
+
+    private BigDecimal enforceTransferValidation(Account from, BigDecimal amount, BigDecimal totalTransferredAmount) {
+        BigDecimal newBalance = enforceAbsoluteLimit(from, amount);
+        enforceDailyLimit(from, totalTransferredAmount, amount);
+        return newBalance;
     }
 
     private boolean isPersonalAccount(AccountType type) {

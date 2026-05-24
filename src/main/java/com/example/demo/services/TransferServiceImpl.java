@@ -33,23 +33,10 @@ public class TransferServiceImpl implements TransferService {
     @Override
     @Transactional
     public Transaction transferFromCheckingToChecking(User currentUser, TransferRequest request){
-        transferPolicy.enforceAuthenticatedUser(currentUser);
-        transferPolicy.enforceDifferentAccounts(request);
-        transferPolicy.enforceApprovedUser(currentUser);
-
         Account from = accountRepository.findByIban(request.fromIban())
                 .orElseThrow(() -> new NotFoundException("From account not found"));
-
-        transferPolicy.enforceCheckingAccount(from);
-
-        transferPolicy.enforceSourceAccountOwnership(currentUser, from);
-
         Account to = accountRepository.findByIban(request.toIban())
                 .orElseThrow(() -> new NotFoundException("To account not found"));
-
-        transferPolicy.enforceCheckingAccount(to);
-
-        BigDecimal newBalance = transferPolicy.enforceAbsoluteLimit(from, request.amount());
 
         BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
                 from.getIban(),
@@ -57,7 +44,13 @@ public class TransferServiceImpl implements TransferService {
                 LocalDate.now().atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
-        transferPolicy.enforceDailyLimit(from, totalTransferedAmount, request.amount());
+        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(
+                currentUser,
+                request,
+                from,
+                to,
+                totalTransferedAmount
+        );
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
@@ -81,20 +74,10 @@ public class TransferServiceImpl implements TransferService {
     @Override
     @Transactional
     public Transaction transferBetweenOwnAccounts(User currentUser, TransferRequest request) {
-        transferPolicy.enforceAuthenticatedUser(currentUser);
-        transferPolicy.enforceDifferentAccounts(request);
-        transferPolicy.enforceApprovedUser(currentUser);
-
         Account from = accountRepository.findByIban(request.fromIban())
                 .orElseThrow(() -> new NotFoundException("From account not found"));
         Account to = accountRepository.findByIban(request.toIban())
                 .orElseThrow(() -> new NotFoundException("To account not found"));
-
-        transferPolicy.enforceAccountsBelongToUser(currentUser, from, to);
-
-        transferPolicy.enforcePersonalAccounts(from, to);
-
-        BigDecimal newBalance = transferPolicy.enforceAbsoluteLimit(from, request.amount());
 
         BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
                 from.getIban(),
@@ -102,7 +85,13 @@ public class TransferServiceImpl implements TransferService {
                 LocalDate.now().atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
-        transferPolicy.enforceDailyLimit(from, totalTransferedAmount, request.amount());
+        BigDecimal newBalance = transferPolicy.validateOwnAccountTransfer(
+                currentUser,
+                request,
+                from,
+                to,
+                totalTransferedAmount
+        );
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
