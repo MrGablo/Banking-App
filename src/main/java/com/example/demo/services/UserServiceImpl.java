@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -87,18 +88,35 @@ public class UserServiceImpl implements UserService{
             throw new IllegalArgumentException("First name and last name are required");
         }
 
-        return userRepository
-                .searchCustomers(
+        List<User> users = userRepository
+                .searchUsersWithAccounts(
                         firstName.trim(),
                         lastName.trim(),
                         org.springframework.data.domain.PageRequest.of(0, 100)
                 )
+                .getContent();
+
+        List<Long> userIds = users.stream()
+                .map(User::getId)
+                .toList();
+
+        if (userIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, List<String>> ibansByOwnerId = accountRepository.findByOwnerIdIn(userIds)
                 .stream()
+                .collect(Collectors.groupingBy(
+                        account -> account.getOwner().getId(),
+                        Collectors.mapping(Account::getIban, Collectors.toList())
+                ));
+
+        return users.stream()
                 .map(user -> new CustomerIbanResponse(
                         user.getId(),
                         user.getFirstName(),
                         user.getLastName(),
-                        accountRepository.findByOwnerId(user.getId()).stream().map(Account::getIban).collect(Collectors.toList())
+                        ibansByOwnerId.getOrDefault(user.getId(), List.of())
                 ))
                 .toList();
     }

@@ -1,6 +1,5 @@
 package com.example.demo.security;
 
-import com.example.demo.common.exception.UnauthorizedException;
 import com.example.demo.entity.Account;
 import com.example.demo.entity.User;
 import com.example.demo.repositories.AccountRepository;
@@ -28,20 +27,20 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
 
     @Override
     public boolean hasPermission(Authentication authentication, Serializable targetId, String targetType, Object permission) {
-        if (authentication == null) {
-            throw new UnauthorizedException("Not authenticated");
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
         }
 
         Object principal = authentication.getPrincipal();
         if (!(principal instanceof User currentUser)) {
-            throw new UnauthorizedException("Invalid principal");
+            return false;
         }
 
         if (isAdmin(authentication)) {
             return true;
         }
 
-        if (!"account" .equalsIgnoreCase(targetType)) {
+        if (!"account".equalsIgnoreCase(targetType)) {
             return false;
         }
 

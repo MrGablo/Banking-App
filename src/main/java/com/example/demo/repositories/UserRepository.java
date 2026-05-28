@@ -28,10 +28,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
             SELECT u FROM User u
             WHERE LOWER(u.firstName) LIKE LOWER(CONCAT('%', :firstName, '%'))
               AND LOWER(u.lastName) LIKE LOWER(CONCAT('%', :lastName, '%'))
-              AND u.role = 'CUSTOMER'
               AND u.approved = true
+              AND EXISTS (SELECT 1 FROM Account a WHERE a.owner = u)
             """)
-    Page<User> searchCustomers(@Param("firstName") String firstName, @Param("lastName") String lastName, Pageable pageable);
+    Page<User> searchUsersWithAccounts(@Param("firstName") String firstName, @Param("lastName") String lastName, Pageable pageable);
 
     @Query("SELECT u FROM User u WHERE u.role = 'CUSTOMER' AND u.id NOT IN (SELECT DISTINCT a.owner.id FROM Account a)")
     Page<User> findCustomersWithoutAccounts(Pageable pageable);

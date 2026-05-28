@@ -36,7 +36,7 @@ public class UserController {
     }
 
     @GetMapping("/customer-ibans")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
     public ResponseEntity<List<CustomerIbanResponse>> searchCustomerIbans(
             @RequestParam String firstName,
             @RequestParam String lastName) {

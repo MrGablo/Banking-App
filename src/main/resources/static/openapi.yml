@@ -361,6 +361,8 @@ paths:
       summary: Get all transactions with pagination
       tags:
         - Transactions
+      security:
+        - BearerAuth: []
       parameters:
         - name: page
           in: query
@@ -468,7 +470,7 @@ paths:
 
   /users/customer-ibans:
     get:
-      summary: Search customer IBANs by name
+      summary: Search user IBANs by name
       tags:
         - Users
       security:
@@ -494,10 +496,17 @@ paths:
                 items:
                   type: object
                   properties:
-                    iban:
+                    userId:
+                      type: integer
+                      format: int64
+                    firstName:
                       type: string
-                    ownerName:
+                    lastName:
                       type: string
+                    ibans:
+                      type: array
+                      items:
+                        type: string
 
   /users/{userId}/approve:
     post:
