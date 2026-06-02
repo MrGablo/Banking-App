@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.TransactionResponse;
+import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Transaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,9 @@ public interface TransactionService {
     public Page<TransactionResponse> getAllTransactions(Pageable pageable);
 
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable);
+
+    Transaction transferFromCheckingToChecking(TransferRequest request);
+    Transaction transferBetweenOwnAccounts(TransferRequest request);
 }
 
 

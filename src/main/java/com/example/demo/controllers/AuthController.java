@@ -1,10 +1,7 @@
 package com.example.demo.controllers;
 
 import com.example.demo.common.exception.UnauthorizedException;
-import com.example.demo.dtos.AuthResponse;
-import com.example.demo.dtos.LoginRequest;
-import com.example.demo.dtos.RegisterRequest;
-import com.example.demo.dtos.UserDTO;
+import com.example.demo.dtos.*;
 import com.example.demo.services.AuthService;
 import com.example.demo.services.JwtService;
 import jakarta.validation.Valid;
@@ -25,9 +22,10 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(new MessageResponse("User successfully registered"));
+
     }
 
     @PostMapping("/login")

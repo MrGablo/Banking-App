@@ -2,12 +2,15 @@ package com.example.demo.controllers;
 
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.AccountResponse;
+import com.example.demo.dtos.MessageResponse;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.UpdateLimitsRequest;
 import com.example.demo.services.AccountService;
 import com.example.demo.services.TransactionService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,23 +22,26 @@ public class AccountController {
     private final AccountService accountService;
     private final TransactionService transactionService;
 
+    @Value("${max.pagination.size}")
+    private int maxPaginationSize;
+
     public AccountController(AccountService accountService, TransactionService transactionService){
         this.accountService = accountService;
         this.transactionService = transactionService;
     }
 
     @PostMapping("/{iban}/close")
-    public ResponseEntity<Void> closeAccount(@PathVariable String iban) {
+    public ResponseEntity<MessageResponse> closeAccount(@PathVariable String iban) {
         accountService.closeAccount(iban);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new MessageResponse("Accounts successfully closed"));
     }
 
     @PutMapping("/{iban}/limits")
-    public ResponseEntity<Void> updateLimits(
+    public ResponseEntity<MessageResponse> updateLimits(
             @PathVariable String iban,
             @Valid @RequestBody UpdateLimitsRequest request) {
         accountService.updateLimits(iban, request);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new MessageResponse("Limits successfully updated"));
     }
 
     @GetMapping
@@ -43,7 +49,7 @@ public class AccountController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return PageResponse.of(
-                accountService.getAllAccounts(PageRequest.of(page, Math.min(size, 100)))
+                accountService.getAllAccounts(PageRequest.of(page, Math.min(size, maxPaginationSize)))
         );
     }
 
@@ -53,7 +59,7 @@ public class AccountController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return PageResponse.of(
-                transactionService.getTransactionsForAccount(iban, PageRequest.of(page, Math.min(size, 100)))
+                transactionService.getTransactionsForAccount(iban, PageRequest.of(page, Math.min(size, maxPaginationSize)))
         );
     }
 }

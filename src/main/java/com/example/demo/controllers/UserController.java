@@ -5,6 +5,7 @@ import com.example.demo.dtos.ApproveCustomerRequest;
 import com.example.demo.dtos.UserResponse;
 import com.example.demo.services.UserService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,9 @@ public class UserController {
 
     private final UserService userService;
 
+    @Value("${max.pagination.size}")
+    private int maxPaginationSize;
+
     public UserController(UserService userService) {
       this.userService = userService;
     }
@@ -26,7 +30,7 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return PageResponse.of(
-                userService.getCustomersWithoutAccounts(PageRequest.of(page, Math.min(size, 100)))
+                userService.getCustomersWithoutAccounts(PageRequest.of(page, Math.min(size, maxPaginationSize)))
         );
     }
 
