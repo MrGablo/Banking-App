@@ -20,11 +20,11 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/v1/transactions")
 @CrossOrigin(origins = "${app.cors.allowed-origin:http://localhost:5173}")
-public class TransferController {
+public class TransactionController {
     private final TransferService transferService;
     private final TransactionService transactionService;
 
-    public TransferController(TransferService transferService, TransactionService transactionService) {
+    public TransactionController(TransferService transferService, TransactionService transactionService) {
         this.transferService = transferService;
         this.transactionService = transactionService;
     }
