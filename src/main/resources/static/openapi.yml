@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: NeoBank Core API
+  title: team 2 Core API
   version: 1.0.0
   description: |
-    REST API for the NeoBank banking application.
+    REST API for the team's 2 banking application.
     - **Currency**: EUR.
     - **IBAN Format**: `NLxxINHO0xxxxxxxxx`.
     - **Security**: JWT Bearer Token required for most routes.
@@ -20,6 +20,38 @@ components:
       bearerFormat: JWT
 
   schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        email:
+          type: string
+          format: email
+          example: "j.doe@example.com"
+        bsn:
+          type: string
+          pattern: '^[0-9]{8,9}$'
+          example: "123456789"
+        phoneNumber:
+          type: string
+          pattern: '^\+?[0-9]{8,15}$'
+          example: "+31612345678"
+        role:
+          type: string
+          enum: [CUSTOMER, EMPLOYEE, ADMIN]
+          example: "CUSTOMER"
+        approved:
+          type: boolean
+          example: true
+
     Account:
       type: object
       properties:
@@ -43,6 +75,12 @@ components:
         active:
           type: boolean
           example: true
+        ownerId:
+          type: integer
+          example: 1
+        ownerName:
+          type: string
+          example: "John Doe"
 
     Transaction:
       type: object
@@ -62,72 +100,204 @@ components:
           example: 75.00
         timestamp:
           type: string
+          format: date-time
           example: "2026-04-20T14:00:00"
         userInitiating:
           type: string
           example: "j.doe@example.com"
 
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "j.doe@example.com"
+        password:
+          type: string
+          example: "password123"
+
+    RegisterRequest:
+      type: object
+      required: [firstName, lastName, email, bsn, phoneNumber, password]
+      properties:
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        email:
+          type: string
+          format: email
+          example: "j.doe@example.com"
+        bsn:
+          type: string
+          pattern: '^[0-9]{8,9}$'
+          example: "123456789"
+        phoneNumber:
+          type: string
+          pattern: '^\+?[0-9]{8,15}$'
+          example: "+31612345678"
+        password:
+          type: string
+          minLength: 6
+          maxLength: 100
+          example: "SecurePassword123!"
+
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        approved:
+          type: boolean
+        token:
+          type: string
+
+    UpdateLimitsRequest:
+      type: object
+      properties:
+        absoluteLimit:
+          type: number
+          format: double
+        dailyLimit:
+          type: number
+          format: double
+
+    TransferRequest:
+      type: object
+      required: [fromIban, toIban, amount]
+      properties:
+        fromIban:
+          type: string
+          pattern: '^NL[0-9]{2}INHO0[0-9]{9}$'
+          example: "NL01INHO0111111111"
+        toIban:
+          type: string
+          pattern: '^NL[0-9]{2}INHO0[0-9]{9}$'
+          example: "NL01INHO0222222222"
+        amount:
+          type: number
+          format: double
+          example: 100.00
+
 paths:
   /auth/login:
     post:
       summary: User Login
+      tags:
+        - Authentication
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [email, password]
-              properties:
-                email: { type: string, example: "j.doe@example.com" }
-                password: { type: string, example: "password123" }
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Success
+          description: Login successful
           content:
             application/json:
               schema:
-                properties:
-                  token: { type: string }
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
 
   /auth/register:
     post:
-      summary: Customer Signup
+      summary: Customer Registration
+      tags:
+        - Authentication
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [firstName, lastName, email, bsn, password]
-              properties:
-                firstName: { type: string }
-                lastName: { type: string }
-                email: { type: string }
-                bsn: { type: string, example: "123456789" }
-                password: { type: string }
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
         '201':
-          description: Registered
+          description: Customer registered successfully
+        '400':
+          description: Invalid input
+
+  /auth/me:
+    get:
+      summary: Get current authenticated user
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
 
   /accounts:
     get:
-      summary: Get list of accounts
+      summary: Get all accounts with pagination
+      tags:
+        - Accounts
       security:
         - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Account'
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  totalPages:
+                    type: integer
+                  totalElements:
+                    type: integer
+
+  /accounts/{iban}/close:
+    post:
+      summary: Close an account
+      tags:
+        - Accounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: iban
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Account closed successfully
+        '404':
+          description: Account not found
 
   /accounts/{iban}/limits:
     put:
-      summary: Update limits (Employee only)
+      summary: Update account limits (Employee only)
+      tags:
+        - Accounts
       security:
         - BearerAuth: []
       parameters:
@@ -141,36 +311,36 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                absoluteLimit: { type: number }
-                dailyLimit: { type: number }
-              anyOf:
-                - required: [absoluteLimit]
-                - required: [dailyLimit]
+              $ref: '#/components/schemas/UpdateLimitsRequest'
       responses:
-        '200':
-          description: Updated
+        '204':
+          description: Limits updated successfully
+        '403':
+          description: Forbidden
 
-  /transactions:
+  /accounts/{iban}/transactions:
     get:
-      summary: Search transactions
+      summary: Get transactions for a specific account
+      tags:
+        - Accounts
       security:
         - BearerAuth: []
       parameters:
+        - name: iban
+          in: path
+          required: true
+          schema:
+            type: string
         - name: page
           in: query
           schema:
             type: integer
             default: 0
-        - name: minAmount
+        - name: size
           in: query
           schema:
-            type: number
-        - name: iban
-          in: query
-          schema:
-            type: string
+            type: integer
+            default: 20
       responses:
         '200':
           description: OK
@@ -185,8 +355,45 @@ paths:
                       $ref: '#/components/schemas/Transaction'
                   totalPages:
                     type: integer
+
+  /transactions:
+    get:
+      summary: Get all transactions with pagination
+      tags:
+        - Transactions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  totalPages:
+                    type: integer
+
+  /transactions/transfer-checking:
     post:
-      summary: Transfer funds
+      summary: Transfer between own checking accounts
+      tags:
+        - Transactions
       security:
         - BearerAuth: []
       requestBody:
@@ -194,21 +401,118 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [fromIban, toIban, amount]
-              properties:
-                fromIban: { type: string }
-                toIban: { type: string }
-                amount: { type: number }
+              $ref: '#/components/schemas/TransferRequest'
       responses:
         '201':
-          description: Created
+          description: Transfer successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
         '403':
-          description: Limit Exceeded
+          description: Limit exceeded
 
-  /employees/approve/{userId}:
+  /transactions/transfer:
+    post:
+      summary: Transfer between own accounts
+      tags:
+        - Transactions
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '201':
+          description: Transfer successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '403':
+          description: Limit exceeded
+
+  /users:
+    get:
+      summary: Get customers without accounts (Employee only)
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  totalPages:
+                    type: integer
+
+  /users/customer-ibans:
+    get:
+      summary: Search user IBANs by name
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: firstName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: lastName
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: integer
+                      format: int64
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+                    ibans:
+                      type: array
+                      items:
+                        type: string
+
+  /users/{userId}/approve:
     post:
       summary: Approve customer and create accounts
+      tags:
+        - Users
       security:
         - BearerAuth: []
       parameters:
@@ -217,24 +521,18 @@ paths:
           required: true
           schema:
             type: integer
-      responses:
-        '201':
-          description: Accounts created (Checking & Savings)
-
-  /atm/transaction:
-    post:
-      summary: ATM Deposit/Withdrawal
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [iban, amount, type]
-              properties:
-                iban: { type: string }
-                amount: { type: number }
-                type: { type: string, enum: [DEPOSIT, WITHDRAWAL] }
       responses:
-        '200':
-          description: Success
+        '201':
+          description: Customer approved and accounts created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: Forbidden

@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record TransferRequest(
-        @NotBlank String userEmail,
         @NotBlank String fromIban,
         @NotBlank String toIban,
         @Positive BigDecimal amount,

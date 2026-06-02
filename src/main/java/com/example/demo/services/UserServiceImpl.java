@@ -3,6 +3,7 @@ package com.example.demo.services;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.ApproveCustomerRequest;
+import com.example.demo.dtos.CustomerIbanResponse;
 import com.example.demo.dtos.UserResponse;
 import com.example.demo.entity.Account;
 import com.example.demo.common.enums.AccountType;
@@ -16,6 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService{
@@ -76,6 +80,45 @@ public class UserServiceImpl implements UserService{
         accountRepository.save(savings);
 
         return UserResponse.from(user);
+    }
+
+    @Override
+    public List<CustomerIbanResponse> searchCustomerIbans(String firstName, String lastName) {
+        if (firstName == null || firstName.isBlank() || lastName == null || lastName.isBlank()) {
+            throw new IllegalArgumentException("First name and last name are required");
+        }
+
+        List<User> users = userRepository
+                .searchUsersWithAccounts(
+                        firstName.trim(),
+                        lastName.trim(),
+                        org.springframework.data.domain.PageRequest.of(0, 100)
+                )
+                .getContent();
+
+        List<Long> userIds = users.stream()
+                .map(User::getId)
+                .toList();
+
+        if (userIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, List<String>> ibansByOwnerId = accountRepository.findByOwnerIdIn(userIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        account -> account.getOwner().getId(),
+                        Collectors.mapping(Account::getIban, Collectors.toList())
+                ));
+
+        return users.stream()
+                .map(user -> new CustomerIbanResponse(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        ibansByOwnerId.getOrDefault(user.getId(), List.of())
+                ))
+                .toList();
     }
 
 //    private void requireEmployee() {
