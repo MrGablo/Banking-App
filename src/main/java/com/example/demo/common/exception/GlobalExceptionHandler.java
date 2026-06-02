@@ -2,6 +2,7 @@ package com.example.demo.common.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -47,6 +48,13 @@ public class GlobalExceptionHandler {
                 .body(errorBody(HttpStatus.BAD_REQUEST.value(), exception.getMessage()));
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException exception) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(errorBody(HttpStatus.FORBIDDEN.value(), "Access denied"));
+    }
+
     @ExceptionHandler(DuplicateException.class)
     public ResponseEntity<Map<String, Object>> DuplicateException(DuplicateException exception) {
         return ResponseEntity
@@ -68,9 +76,12 @@ public class GlobalExceptionHandler {
     }
 
     private Map<String, Object> errorBody(int status, String message) {
+        // Keep the existing `message` field for compatibility but also expose `error`
+        // so frontends that expect an `error` property can read a friendly string.
         return Map.of(
                 "status", status,
                 "message", message,
+                "error", message,
                 "timestamp", Instant.now().toString()
         );
     }

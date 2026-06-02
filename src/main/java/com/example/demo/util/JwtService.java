@@ -1,4 +1,4 @@
-package com.example.demo.services;
+package com.example.demo.util;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -50,3 +50,4 @@ public class JwtService {
                 .getSubject();
     }
 }
+
