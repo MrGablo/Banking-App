@@ -6,7 +6,7 @@ import com.example.demo.dtos.LoginRequest;
 import com.example.demo.dtos.RegisterRequest;
 import com.example.demo.dtos.UserDTO;
 import com.example.demo.services.AuthService;
-import com.example.demo.services.JwtService;
+import com.example.demo.util.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
