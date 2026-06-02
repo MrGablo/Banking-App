@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
+import com.example.demo.dtos.TransactionSearchRequest;
 import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
 import com.example.demo.services.TransactionService;
@@ -51,30 +52,14 @@ public class TransactionController {
     }
     @GetMapping
     public PageResponse<TransactionResponse> getAllTransactions(
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime startDate,
-
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime endDate,
-
-            @RequestParam(required = false) BigDecimal minAmount,
-            @RequestParam(required = false) BigDecimal maxAmount,
-            @RequestParam(required = false) BigDecimal exactAmount,
-            @RequestParam(required = false) String iban,
+            TransactionSearchRequest filter,
 
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         return PageResponse.of(
                 transactionService.searchTransactions(
-                        startDate,
-                        endDate,
-                        minAmount,
-                        maxAmount,
-                        exactAmount,
-                        iban,
+                        filter,
                         PageRequest.of(
                                 page,
                                 Math.min(size, 100),

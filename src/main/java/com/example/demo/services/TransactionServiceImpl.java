@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.TransactionResponse;
+import com.example.demo.dtos.TransactionSearchRequest;
 import com.example.demo.entity.Transaction;
 import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.TransactionRepository;
@@ -64,23 +65,11 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Page<TransactionResponse> searchTransactions(
-            LocalDateTime startDate,
-            LocalDateTime endDate,
-            BigDecimal minAmount,
-            BigDecimal maxAmount,
-            BigDecimal exactAmount,
-            String iban,
+            TransactionSearchRequest filter,
             Pageable pageable
     ) {
-        return transactionRepository.searchTransactions(
-                startDate,
-                endDate,
-                minAmount,
-                maxAmount,
-                exactAmount,
-                iban,
-                pageable
-        ).map(TransactionResponse::from);
+        return transactionRepository.searchTransactions(filter, pageable)
+                .map(TransactionResponse::from);
     }
 
 //    private void requireEmployee() {

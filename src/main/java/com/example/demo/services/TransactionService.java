@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.TransactionResponse;
+import com.example.demo.dtos.TransactionSearchRequest;
 import com.example.demo.entity.Transaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,12 +24,7 @@ public interface TransactionService {
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable);
 
     Page<TransactionResponse> searchTransactions(
-            LocalDateTime startDate,
-            LocalDateTime endDate,
-            BigDecimal minAmount,
-            BigDecimal maxAmount,
-            BigDecimal exactAmount,
-            String iban,
+            TransactionSearchRequest filter,
             Pageable pageable
     );
 }
