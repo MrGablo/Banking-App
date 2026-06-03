@@ -33,7 +33,7 @@ public class AccountController {
     @PostMapping("/{iban}/close")
     public ResponseEntity<MessageResponse> closeAccount(@PathVariable String iban) {
         accountService.closeAccount(iban);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new MessageResponse("Accounts successfully closed"));
+        return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse("Accounts successfully closed"));
     }
 
     @PutMapping("/{iban}/limits")
@@ -41,7 +41,7 @@ public class AccountController {
             @PathVariable String iban,
             @Valid @RequestBody UpdateLimitsRequest request) {
         accountService.updateLimits(iban, request);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new MessageResponse("Limits successfully updated"));
+        return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse("Limits successfully updated"));
     }
 
     @GetMapping

@@ -58,7 +58,7 @@ public class TransferPolicy {
     }
 
     private void enforceEmployeeUser(User currentUser) {
-        if (currentUser.getRole() != null && currentUser.getRole() != UserRole.EMPLOYEE) {
+        if (currentUser.getRole() == null || currentUser.getRole() != UserRole.EMPLOYEE) {
             throw new ForbiddenException("Only Employees are allowed");
         }
     }
@@ -71,23 +71,10 @@ public class TransferPolicy {
     }
 
     private void enforceSufficientFund(Account from, BigDecimal amount) {
-        if (amount.compareTo(from.getBalance()) > 0) {
+        if (from.getBalance().compareTo(amount) > 0) {
             throw new ConflictException("Insufficient Funds");
         }
     }
-
-//    public void enforceAbsoluteLimit(Account from, BigDecimal amount) {
-//        if (amount.compareTo(from.getBalance()) > 0) {
-//            throw new ConflictException("Insufficient Funds");
-//        }
-//    }
-//
-//    public void enforceDailyLimit(Account from, BigDecimal amount) {
-//        if (amount.compareTo(from.getBalance()) > 0) {
-//            throw new ConflictException("Insufficient Funds");
-//        }
-//    }
-
 
     private void enforceSourceAccountOwnership(User currentUser, Account account) {
         if (account.getOwner() == null || !account.getOwner().getId().equals(currentUser.getId())) {

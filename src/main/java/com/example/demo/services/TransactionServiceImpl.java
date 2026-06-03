@@ -82,10 +82,11 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Transaction transferFromCheckingToChecking(TransferRequest request){
+    @Transactional
+    public Transaction transferFromCheckingToChecking(TransferRequest request, User currentUser){
 
 
-        User user = userRepository.findByEmail(request.userEmail())
+        User user = userRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         Account from = accountRepository.findByIban(request.fromIban())
@@ -129,10 +130,10 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
-    public Transaction transferBetweenOwnAccounts(TransferRequest request) {
+    public Transaction transferBetweenOwnAccounts(TransferRequest request, User currentUser) {
 
 
-        User user = userRepository.findByEmail(request.userEmail())
+        User user = userRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
 

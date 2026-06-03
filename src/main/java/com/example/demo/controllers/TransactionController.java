@@ -4,12 +4,15 @@ import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Transaction;
+import com.example.demo.entity.User;
 import com.example.demo.services.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,14 +29,18 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer-checking")
-    public ResponseEntity<Transaction> transferChecking(@Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transactionService.transferFromCheckingToChecking(request);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Transaction> transferChecking(@AuthenticationPrincipal User currentUser,
+                                                        @Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transactionService.transferFromCheckingToChecking(request,currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<Transaction> transfer(@Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transactionService.transferBetweenOwnAccounts(request);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Transaction> transfer( @AuthenticationPrincipal User currentUser,
+                                                 @Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transactionService.transferBetweenOwnAccounts(request,currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 

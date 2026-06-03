@@ -201,6 +201,6 @@ class TransferPolicyTest {
     }
 
     private TransferRequest request(String fromIban, String toIban, String amount) {
-        return new TransferRequest(fromIban, toIban, new BigDecimal(amount), "Test transfer", "kohcee06@gmail.com");
+        return new TransferRequest(fromIban, toIban, new BigDecimal(amount), "Test transfer");
     }
 }
