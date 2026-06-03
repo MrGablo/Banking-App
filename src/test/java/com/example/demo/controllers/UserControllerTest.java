@@ -1,67 +1,88 @@
 package com.example.demo.controllers;
 
 import com.example.demo.common.enums.UserRole;
+import com.example.demo.dtos.ApproveCustomerRequest;
 import com.example.demo.dtos.CustomerIbanResponse;
-import com.example.demo.entity.User;
+import com.example.demo.dtos.UserResponse;
 import com.example.demo.services.UserService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
+    @Mock
     private UserService userService;
 
-    private UsernamePasswordAuthenticationToken customerAuth;
+    @InjectMocks
+    private UserController userController;
 
-    @BeforeEach
-    void setUp() {
-        User customer = new User();
-        customer.setId(2L);
-        customer.setRole(UserRole.CUSTOMER);
-        customer.setEmail("customer@test.com");
-        customerAuth = new UsernamePasswordAuthenticationToken(
-                customer, null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+    @Test
+    void getCustomersWithoutAccounts_capsPageSizeAtOneHundred() {
+        UserResponse user = userResponse();
+        when(userService.getCustomersWithoutAccounts(PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(List.of(user), PageRequest.of(0, 100), 1));
+
+        var response = userController.getCustomersWithoutAccounts(0, 500);
+
+        assertEquals(1, response.totalElements());
+        assertEquals(100, response.size());
     }
 
     @Test
-    void searchCustomerByIbanReturnsCustomerIbans() throws Exception {
-        CustomerIbanResponse response = new CustomerIbanResponse(
-                2L,
+    void searchCustomerIbans_returnsMatchingCustomers() {
+        CustomerIbanResponse result = new CustomerIbanResponse(
+                1L,
                 "Jane",
-                "Doe",
-                List.of("NL03INHO1234567890", "NL04INHO1234567890")
+                "Customer",
+                List.of("NL01INHO0123456789")
         );
+        when(userService.searchCustomerIbans("Jane", "Customer")).thenReturn(List.of(result));
 
-        when(userService.searchCustomerByIban("NL03INHO1234567890")).thenReturn(response);
+        var response = userController.searchCustomerIbans("Jane", "Customer");
 
-        mockMvc.perform(get("/api/v1/users/customer-ibans/search-by-iban")
-                        .param("iban", "NL03INHO1234567890")
-                        .with(authentication(customerAuth)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.firstName").value("Jane"))
-                .andExpect(jsonPath("$.ibans[0]").value("NL03INHO1234567890"));
+        assertEquals(List.of(result), response.getBody());
+    }
+
+    @Test
+    void approveCustomer_returnsCreatedUserResponse() {
+        ApproveCustomerRequest request = new ApproveCustomerRequest(
+                new BigDecimal("100.00"),
+                new BigDecimal("500.00")
+        );
+        UserResponse user = userResponse();
+        when(userService.approveCustomer(1L, request)).thenReturn(user);
+
+        var response = userController.approveCustomer(1L, request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(user, response.getBody());
+        verify(userService).approveCustomer(1L, request);
+    }
+
+    private UserResponse userResponse() {
+        return new UserResponse(
+                1L,
+                "Jane",
+                "Customer",
+                "jane@example.com",
+                "123456789",
+                "+31612345678",
+                UserRole.CUSTOMER,
+                true
+        );
     }
 }

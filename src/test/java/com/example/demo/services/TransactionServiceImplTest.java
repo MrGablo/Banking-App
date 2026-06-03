@@ -1,218 +1,73 @@
 package com.example.demo.services;
 
-import com.example.demo.common.enums.AccountType;
-import com.example.demo.common.enums.TransferType;
-import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.NotFoundException;
-import com.example.demo.common.exception.UnauthorizedException;
-import com.example.demo.domain.policy.TransferPolicy;
-import com.example.demo.dtos.TransactionResponse;
-import com.example.demo.dtos.TransferRequest;
-import com.example.demo.entity.Account;
 import com.example.demo.entity.Transaction;
-import com.example.demo.entity.User;
-import com.example.demo.mapper.TransactionMapper;
 import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.TransactionRepository;
-import com.example.demo.repositories.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceImplTest {
 
     @Mock
     private TransactionRepository transactionRepository;
+
     @Mock
     private AccountRepository accountRepository;
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private TransferPolicy transferPolicy;
-    @Mock
-    private TransactionMapper transactionMapper;
 
     @InjectMocks
     private TransactionServiceImpl transactionService;
 
-    private User user;
-    private Account fromAccount;
-    private Account toAccount;
-    private Transaction transaction;
+    @Test
+    void deleteTransaction_whenExists_deletesAndReturnsTrue() {
+        when(transactionRepository.existsById(10L)).thenReturn(true);
 
-    @BeforeEach
-    void setUp() {
-        user = new User();
-        user.setId(1L);
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setEmail("john@test.com");
-        user.setRole(UserRole.EMPLOYEE);
-        user.setApproved(true);
+        boolean deleted = transactionService.deleteTransaction(10L);
 
-        fromAccount = new Account();
-        fromAccount.setIban("NL01INHO0111111111");
-        fromAccount.setType(AccountType.CHECKING);
-        fromAccount.setBalance(new BigDecimal("1000.00"));
-        fromAccount.setOwner(user);
+        assertTrue(deleted);
+        verify(transactionRepository).deleteById(10L);
+    }
 
-        toAccount = new Account();
-        toAccount.setIban("NL01INHO0222222222");
-        toAccount.setType(AccountType.CHECKING);
-        toAccount.setBalance(new BigDecimal("500.00"));
-        toAccount.setOwner(user);
+    @Test
+    void getTransactionsForAccount_whenAccountMissing_throwsNotFoundException() {
+        when(accountRepository.existsByIban("missing")).thenReturn(false);
 
-        transaction = new Transaction();
+        assertThrows(NotFoundException.class,
+                () -> transactionService.getTransactionsForAccount("missing", PageRequest.of(0, 20)));
+    }
+
+    @Test
+    void getTransactionsForAccount_mapsTransactionsToResponses() {
+        Transaction transaction = new Transaction();
         transaction.setId(1L);
-        transaction.setFromIban("NL01INHO0111111111");
-        transaction.setToIban("NL01INHO0222222222");
-        transaction.setAmount(new BigDecimal("100.00"));
-        transaction.setUserInitiating("John");
-        transaction.setCreatedAt(LocalDateTime.now());
-    }
+        transaction.setFromIban("NL01INHO0123456789");
+        transaction.setToIban("NL02INHO0987654321");
+        transaction.setAmount(new BigDecimal("20.00"));
+        transaction.setUserInitiating("Jane Customer");
 
-    @Test
-    void getTransactionByIdReturnsTransaction() {
-        when(transactionRepository.findById(1L)).thenReturn(Optional.of(transaction));
+        PageRequest pageable = PageRequest.of(0, 20);
+        when(accountRepository.existsByIban("NL01INHO0123456789")).thenReturn(true);
+        when(transactionRepository.findByFromIbanOrToIban("NL01INHO0123456789", "NL01INHO0123456789", pageable))
+                .thenReturn(new PageImpl<>(List.of(transaction), pageable, 1));
 
-        Optional<Transaction> result = transactionService.getTransactionById(1L);
+        var page = transactionService.getTransactionsForAccount("NL01INHO0123456789", pageable);
 
-        assertTrue(result.isPresent());
-        assertEquals(1L, result.get().getId());
-    }
-
-    @Test
-    void getTransactionByIdReturnsEmptyWhenNotFound() {
-        when(transactionRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertTrue(transactionService.getTransactionById(99L).isEmpty());
-    }
-
-    @Test
-    void addTransactionSavesAndReturns() {
-        when(transactionRepository.save(transaction)).thenReturn(transaction);
-
-        Transaction result = transactionService.addTransaction(transaction);
-
-        assertEquals(transaction, result);
-        verify(transactionRepository).save(transaction);
-    }
-
-    @Test
-    void getAllTransactionsReturnsPage() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Transaction> page = new PageImpl<>(List.of(transaction));
-        when(transactionRepository.findAll(pageable)).thenReturn(page);
-
-        Page<TransactionResponse> result = transactionService.getAllTransactions(pageable);
-
-        assertEquals(1, result.getTotalElements());
-    }
-
-    @Test
-    void getTransactionsForAccountThrowsWhenAccountNotFound() {
-        when(accountRepository.existsByIban("NL01INHO0000000000")).thenReturn(false);
-
-        assertThrows(NotFoundException.class,
-                () -> transactionService.getTransactionsForAccount("NL01INHO0000000000", PageRequest.of(0, 10)));
-    }
-
-    @Test
-    void getTransactionsForAccountReturnsPage() {
-        Pageable pageable = PageRequest.of(0, 10);
-        when(accountRepository.existsByIban("NL01INHO0111111111")).thenReturn(true);
-        Page<Transaction> page = new PageImpl<>(List.of(transaction));
-        when(transactionRepository.findByFromIbanOrToIban("NL01INHO0111111111", "NL01INHO0111111111", pageable))
-                .thenReturn(page);
-
-        Page<TransactionResponse> result = transactionService.getTransactionsForAccount("NL01INHO0111111111", pageable);
-
-        assertEquals(1, result.getTotalElements());
-    }
-
-    @Test
-    void transferCheckingToCheckingSuccess() {
-        TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
-                new BigDecimal("100.00"), "Test");
-
-        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
-        when(accountRepository.findByIban("NL01INHO0111111111")).thenReturn(Optional.of(fromAccount));
-        when(accountRepository.findByIban("NL01INHO0222222222")).thenReturn(Optional.of(toAccount));
-        when(transactionRepository.sumByFromIbanAndDate(eq("NL01INHO0111111111"), any(), any()))
-                .thenReturn(Optional.of(BigDecimal.ZERO));
-        when(transferPolicy.validateTransfer(eq(user), eq(request), eq(fromAccount), eq(toAccount), any(), eq(TransferType.CHECKING_TO_CHECKING)))
-                .thenReturn(new BigDecimal("900.00"));
-        when(transactionMapper.toEntity(request, user, TransferType.CHECKING_TO_CHECKING)).thenReturn(transaction);
-        when(transactionRepository.save(transaction)).thenReturn(transaction);
-
-        Transaction result = transactionService.transfer(request, user, TransferType.CHECKING_TO_CHECKING);
-
-        assertEquals(transaction, result);
-        verify(accountRepository, times(2)).save(any(Account.class));
-    }
-
-    @Test
-    void transferThrowsWhenUserNotFound() {
-        TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
-                new BigDecimal("100.00"), "Test");
-
-        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class,
-                () -> transactionService.transfer(request, user, TransferType.CHECKING_TO_CHECKING));
-    }
-
-    @Test
-    void transferBetweenOwnAccountsSuccess() {
-        TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
-                new BigDecimal("100.00"), "Test");
-
-        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
-        when(accountRepository.findByIban("NL01INHO0111111111")).thenReturn(Optional.of(fromAccount));
-        when(accountRepository.findByIban("NL01INHO0222222222")).thenReturn(Optional.of(toAccount));
-        when(transactionRepository.sumByFromIbanAndDate(eq("NL01INHO0111111111"), any(), any()))
-                .thenReturn(Optional.of(BigDecimal.ZERO));
-        when(transferPolicy.validateTransfer(eq(user), eq(request), eq(fromAccount), eq(toAccount), any(), eq(TransferType.OWN_ACCOUNTS)))
-                .thenReturn(new BigDecimal("900.00"));
-        when(transactionMapper.toEntity(request, user, TransferType.OWN_ACCOUNTS)).thenReturn(transaction);
-        when(transactionRepository.save(transaction)).thenReturn(transaction);
-
-        Transaction result = transactionService.transfer(request, user, TransferType.OWN_ACCOUNTS);
-
-        assertEquals(transaction, result);
-    }
-
-    @Test
-    void transferRejectsUnauthorizedCustomer() {
-        User customer = new User();
-        customer.setId(2L);
-        customer.setEmail("customer@test.com");
-        customer.setRole(UserRole.CUSTOMER);
-        customer.setAccounts(List.of()); // no accounts
-
-        TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
-                new BigDecimal("100.00"), "Test");
-
-        when(userRepository.findByEmail("customer@test.com")).thenReturn(Optional.of(customer));
-
-        assertThrows(UnauthorizedException.class,
-                () -> transactionService.transfer(request, customer, TransferType.CHECKING_TO_CHECKING));
+        assertEquals(1, page.getTotalElements());
+        assertEquals("NL02INHO0987654321", page.getContent().getFirst().toIban());
     }
 }

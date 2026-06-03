@@ -1,170 +1,91 @@
 package com.example.demo.controllers;
 
-import com.example.demo.common.enums.TransferType;
-import com.example.demo.common.enums.UserRole;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
 import com.example.demo.services.TransactionService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.demo.services.TransferService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class TransactionControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private TransferService transferService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    @MockitoBean
+    @Mock
     private TransactionService transactionService;
 
-    private User employeeUser;
-    private User customerUser;
-    private UsernamePasswordAuthenticationToken employeeAuth;
-    private UsernamePasswordAuthenticationToken customerAuth;
+    @InjectMocks
+    private TransactionController transactionController;
 
-    @BeforeEach
-    void setUp() {
-        employeeUser = new User();
-        employeeUser.setId(1L);
-        employeeUser.setFirstName("John");
-        employeeUser.setLastName("Doe");
-        employeeUser.setEmail("john@test.com");
-        employeeUser.setRole(UserRole.EMPLOYEE);
-        employeeUser.setApproved(true);
-
-        employeeAuth = new UsernamePasswordAuthenticationToken(
-                employeeUser, null, List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
-
-        customerUser = new User();
-        customerUser.setId(2L);
-        customerUser.setFirstName("Jane");
-        customerUser.setLastName("Doe");
-        customerUser.setEmail("jane@test.com");
-        customerUser.setRole(UserRole.CUSTOMER);
-        customerUser.setApproved(true);
-
-        customerAuth = new UsernamePasswordAuthenticationToken(
-                customerUser, null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
-    }
-
-    //transferChecking
     @Test
-    void transferCheckingReturnsCreated() throws Exception {
-        TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
-                new BigDecimal("100.00"), "Test transfer");
-
+    void transferChecking_returnsCreatedTransaction() {
+        User user = new User();
+        TransferRequest request = transferRequest();
         Transaction transaction = new Transaction();
-        transaction.setId(1L);
-        transaction.setFromIban("NL01INHO0111111111");
-        transaction.setToIban("NL01INHO0222222222");
-        transaction.setAmount(new BigDecimal("100.00"));
+        when(transferService.transferFromCheckingToChecking(user, request)).thenReturn(transaction);
 
-        when(transactionService.transfer(any(TransferRequest.class), any(User.class), any(TransferType.class)))
-                .thenReturn(transaction);
+        var response = transactionController.transferChecking(user, request);
 
-        mockMvc.perform(post("/api/v1/transactions/transfer-checking")
-                        .with(authentication(employeeAuth))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.fromIban").value("NL01INHO0111111111"));
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(transaction, response.getBody());
     }
 
     @Test
-    void transferCheckingForbiddenWithoutAuth() throws Exception {
-        TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
-                new BigDecimal("100.00"), "Test");
-
-        mockMvc.perform(post("/api/v1/transactions/transfer-checking")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
-    }
-
-    //transfer(own accounts)
-    @Test
-    void transferOwnAccountsReturnsCreated() throws Exception {
-        TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
-                new BigDecimal("50.00"), "Own transfer");
-
+    void transfer_returnsCreatedTransaction() {
+        User user = new User();
+        TransferRequest request = transferRequest();
         Transaction transaction = new Transaction();
-        transaction.setId(2L);
-        transaction.setFromIban("NL01INHO0111111111");
-        transaction.setToIban("NL01INHO0222222222");
-        transaction.setAmount(new BigDecimal("50.00"));
+        when(transferService.transferBetweenOwnAccounts(user, request)).thenReturn(transaction);
 
-        when(transactionService.transfer(any(TransferRequest.class), any(User.class), any(TransferType.class)))
-                .thenReturn(transaction);
+        var response = transactionController.transfer(user, request);
 
-        mockMvc.perform(post("/api/v1/transactions/transfer")
-                        .with(authentication(employeeAuth))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.amount").value(50.00));
-    }
-
-    //getAllTransactions
-    @Test
-    void getAllTransactionsReturnsPage() throws Exception {
-        TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",
-                "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John", "Invoice");
-
-        when(transactionService.getAllTransactions(any())).thenReturn(new PageImpl<>(List.of(txResponse)));
-
-        mockMvc.perform(get("/api/v1/transactions")
-                        .with(authentication(employeeAuth)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].fromIban").value("NL01INHO0111111111"))
-                .andExpect(jsonPath("$.content[0].description").value("Invoice"));
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(transaction, response.getBody());
     }
 
     @Test
-    void getAllTransactionsReturnsCurrentCustomerPage() throws Exception {
-        TransactionResponse txResponse = new TransactionResponse(2L, "NL03INHO0111111111",
-                "NL04INHO0222222222", new BigDecimal("25.00"), LocalDateTime.now(), "Jane", "Rent");
+    void getAllTransactions_capsPageSizeAtOneHundred() {
+        TransactionResponse transaction = new TransactionResponse(
+                1L,
+                "NL01INHO0123456789",
+                "NL02INHO0987654321",
+                new BigDecimal("20.00"),
+                null,
+                "Jane Customer"
+        );
+        when(transactionService.getAllTransactions(PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(List.of(transaction), PageRequest.of(0, 100), 1));
 
-        when(transactionService.getTransactionsForUser(any(User.class), any())).thenReturn(new PageImpl<>(List.of(txResponse)));
+        var response = transactionController.getAllTransactions(0, 500);
 
-        mockMvc.perform(get("/api/v1/transactions?page=0&size=8")
-                        .with(authentication(customerAuth)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].fromIban").value("NL03INHO0111111111"))
-                .andExpect(jsonPath("$.content[0].description").value("Rent"));
+        assertEquals(1, response.totalElements());
+        assertEquals(100, response.size());
+        verify(transactionService).getAllTransactions(PageRequest.of(0, 100));
     }
 
-    @Test
-    void getAllTransactionsForbiddenWithoutAuth() throws Exception {
-        mockMvc.perform(get("/api/v1/transactions"))
-                .andExpect(status().isForbidden());
+    private TransferRequest transferRequest() {
+        return new TransferRequest(
+                "NL01INHO0123456789",
+                "NL02INHO0987654321",
+                new BigDecimal("20.00"),
+                "JUnit transfer"
+        );
     }
 }

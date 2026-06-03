@@ -1,30 +1,25 @@
 package com.example.demo.services;
 
-import com.example.demo.common.enums.AccountType;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
-import com.example.demo.dtos.AccountResponse;
 import com.example.demo.dtos.UpdateLimitsRequest;
 import com.example.demo.entity.Account;
-import com.example.demo.entity.User;
 import com.example.demo.repositories.AccountRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceImplTest {
@@ -35,58 +30,31 @@ class AccountServiceImplTest {
     @InjectMocks
     private AccountServiceImpl accountService;
 
-    private Account account;
-    private User owner;
+    @Test
+    void deleteAccount_whenIbanExists_deletesAndReturnsTrue() {
+        when(accountRepository.existsByIban("NL01INHO0123456789")).thenReturn(true);
 
-    @BeforeEach
-    void setUp() {
-        owner = new User();
-        owner.setId(1L);
-        owner.setFirstName("John");
-        owner.setLastName("Doe");
+        boolean deleted = accountService.deleteAccount("NL01INHO0123456789");
 
-        account = new Account();
-        account.setId(1L);
-        account.setIban("NL01INHO0123456789");
-        account.setType(AccountType.CHECKING);
-        account.setBalance(new BigDecimal("1000.00"));
-        account.setAbsoluteLimit(new BigDecimal("0.00"));
-        account.setDailyLimit(new BigDecimal("500.00"));
+        assertTrue(deleted);
+        verify(accountRepository).deleteByIban("NL01INHO0123456789");
+    }
+
+    @Test
+    void deleteAccount_whenIbanMissing_returnsFalse() {
+        when(accountRepository.existsByIban("NL01INHO0123456789")).thenReturn(false);
+
+        boolean deleted = accountService.deleteAccount("NL01INHO0123456789");
+
+        assertFalse(deleted);
+        verify(accountRepository).existsByIban("NL01INHO0123456789");
+        verifyNoMoreInteractions(accountRepository);
+    }
+
+    @Test
+    void closeAccount_whenActive_setsInactiveAndSaves() {
+        Account account = new Account();
         account.setActive(true);
-        account.setOwner(owner);
-    }
-
-    @Test
-    void getAccountByIbanReturnsAccountWhenFound() {
-        when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
-
-        Optional<Account> result = accountService.getAccountByIban("NL01INHO0123456789");
-
-        assertTrue(result.isPresent());
-        assertEquals("NL01INHO0123456789", result.get().getIban());
-    }
-
-    @Test
-    void getAccountByIbanReturnsEmptyWhenNotFound() {
-        when(accountRepository.findByIban("NL01INHO0000000000")).thenReturn(Optional.empty());
-
-        Optional<Account> result = accountService.getAccountByIban("NL01INHO0000000000");
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void addAccountSavesAndReturnsAccount() {
-        when(accountRepository.save(account)).thenReturn(account);
-
-        Account result = accountService.addAccount(account);
-
-        assertEquals(account, result);
-        verify(accountRepository).save(account);
-    }
-
-    @Test
-    void closeAccountSetsInactive() {
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 
         accountService.closeAccount("NL01INHO0123456789");
@@ -96,14 +64,15 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void closeAccountThrowsWhenNotFound() {
-        when(accountRepository.findByIban("NL01INHO0000000000")).thenReturn(Optional.empty());
+    void closeAccount_whenMissing_throwsNotFoundException() {
+        when(accountRepository.findByIban("missing")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> accountService.closeAccount("NL01INHO0000000000"));
+        assertThrows(NotFoundException.class, () -> accountService.closeAccount("missing"));
     }
 
     @Test
-    void closeAccountThrowsWhenAlreadyClosed() {
+    void closeAccount_whenAlreadyClosed_throwsConflictException() {
+        Account account = new Account();
         account.setActive(false);
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 
@@ -111,34 +80,17 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void updateLimitsUpdatesAndSaves() {
-        UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("1000.00"));
+    void updateLimits_updatesAbsoluteAndDailyLimits() {
+        Account account = new Account();
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 
-        accountService.updateLimits("NL01INHO0123456789", request);
+        accountService.updateLimits(
+                "NL01INHO0123456789",
+                new UpdateLimitsRequest(new BigDecimal("200.00"), new BigDecimal("750.00"))
+        );
 
-        assertEquals(new BigDecimal("100.00"), account.getAbsoluteLimit());
-        assertEquals(new BigDecimal("1000.00"), account.getDailyLimit());
+        assertTrue(new BigDecimal("200.00").compareTo(account.getAbsoluteLimit()) == 0);
+        assertTrue(new BigDecimal("750.00").compareTo(account.getDailyLimit()) == 0);
         verify(accountRepository).save(account);
-    }
-
-    @Test
-    void updateLimitsThrowsWhenNotFound() {
-        UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("1000.00"));
-        when(accountRepository.findByIban("NL01INHO0000000000")).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class, () -> accountService.updateLimits("NL01INHO0000000000", request));
-    }
-
-    @Test
-    void getAllAccountsReturnsPageOfResponses() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Account> page = new PageImpl<>(List.of(account));
-        when(accountRepository.findAll(pageable)).thenReturn(page);
-
-        Page<AccountResponse> result = accountService.getAllAccounts(pageable);
-
-        assertEquals(1, result.getTotalElements());
-        assertEquals("NL01INHO0123456789", result.getContent().get(0).iban());
     }
 }

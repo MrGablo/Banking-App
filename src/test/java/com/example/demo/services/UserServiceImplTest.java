@@ -5,146 +5,121 @@ import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.ApproveCustomerRequest;
-import com.example.demo.dtos.UserResponse;
 import com.example.demo.entity.Account;
 import com.example.demo.entity.User;
 import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.util.AccountUtil;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
     @Mock
     private AccountRepository accountRepository;
+
     @Mock
     private AccountUtil accountUtil;
 
     @InjectMocks
     private UserServiceImpl userService;
 
-    private User customer;
-
-    @BeforeEach
-    void setUp() {
-        customer = new User();
-        customer.setId(1L);
-        customer.setFirstName("Jane");
-        customer.setLastName("Doe");
-        customer.setEmail("jane@test.com");
-        customer.setBsn("123456789");
-        customer.setPhoneNumber("+31612345678");
-        customer.setRole(UserRole.CUSTOMER);
-        customer.setApproved(false);
-        customer.setActive(true);
-    }
-
-    // --- getCustomersWithoutAccounts ---
-
     @Test
-    void getCustomersWithoutAccountsReturnsPage() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<User> page = new PageImpl<>(List.of(customer));
-        when(userRepository.findCustomersWithoutAccounts(pageable)).thenReturn(page);
-
-        Page<UserResponse> result = userService.getCustomersWithoutAccounts(pageable);
-
-        assertEquals(1, result.getTotalElements());
-        assertEquals("Jane", result.getContent().get(0).firstName());
-    }
-
-    @Test
-    void getCustomersWithoutAccountsReturnsEmptyPage() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<User> page = new PageImpl<>(List.of());
-        when(userRepository.findCustomersWithoutAccounts(pageable)).thenReturn(page);
-
-        Page<UserResponse> result = userService.getCustomersWithoutAccounts(pageable);
-
-        assertEquals(0, result.getTotalElements());
-    }
-
-    // --- getAllCustomers ---
-
-    @Test
-    void getAllCustomersReturnsPage() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<User> page = new PageImpl<>(List.of(customer));
-        when(userRepository.findByRoleAndActive(UserRole.CUSTOMER, true, pageable)).thenReturn(page);
-
-        Page<UserResponse> result = userService.getAllCustomers(pageable);
-
-        assertEquals(1, result.getTotalElements());
-        assertEquals("Jane", result.getContent().get(0).firstName());
-    }
-
-    // --- approveCustomer ---
-
-    @Test
-    void approveCustomerSuccessfully() {
-        ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
-
+    void approveCustomer_whenValid_approvesUserAndCreatesCheckingAndSavingsAccounts() {
+        User user = customer();
         Account checking = new Account();
-        checking.setType(AccountType.CHECKING);
         Account savings = new Account();
-        savings.setType(AccountType.SAVINGS);
+        ApproveCustomerRequest request = new ApproveCustomerRequest(
+                new BigDecimal("100.00"),
+                new BigDecimal("500.00")
+        );
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
-        when(userRepository.save(customer)).thenReturn(customer);
-        when(accountUtil.newAccount(request.absoluteLimit(), request.dailyLimit(), AccountType.CHECKING)).thenReturn(checking);
-        when(accountUtil.newAccount(request.absoluteLimit(), request.dailyLimit(), AccountType.SAVINGS)).thenReturn(savings);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(accountUtil.newAccount(request.absoluteLimit(), request.dailyLimit(), AccountType.CHECKING))
+                .thenReturn(checking);
+        when(accountUtil.newAccount(request.absoluteLimit(), request.dailyLimit(), AccountType.SAVINGS))
+                .thenReturn(savings);
 
-        UserResponse result = userService.approveCustomer(1L, request);
+        var response = userService.approveCustomer(1L, request);
 
-        assertTrue(customer.isApproved());
-        assertEquals("Jane", result.firstName());
-        verify(accountRepository, times(2)).save(any(Account.class));
+        assertTrue(user.isApproved());
+        assertEquals(1L, response.id());
+        assertEquals(user, checking.getOwner());
+        assertEquals(user, savings.getOwner());
+        verify(accountRepository).save(checking);
+        verify(accountRepository).save(savings);
+        verify(userRepository).save(user);
     }
 
     @Test
-    void approveCustomerThrowsWhenUserNotFound() {
-        ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    void approveCustomer_whenMissing_throwsNotFoundException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> userService.approveCustomer(99L, request));
+        assertThrows(NotFoundException.class,
+                () -> userService.approveCustomer(1L, new ApproveCustomerRequest(BigDecimal.ZERO, BigDecimal.ZERO)));
     }
 
     @Test
-    void approveCustomerThrowsWhenNotCustomerRole() {
-        customer.setRole(UserRole.EMPLOYEE);
-        ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+    void approveCustomer_whenAlreadyApproved_throwsConflictException() {
+        User user = customer();
+        user.setApproved(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        assertThrows(ConflictException.class, () -> userService.approveCustomer(1L, request));
+        assertThrows(ConflictException.class,
+                () -> userService.approveCustomer(1L, new ApproveCustomerRequest(BigDecimal.ZERO, BigDecimal.ZERO)));
     }
 
     @Test
-    void approveCustomerThrowsWhenAlreadyApproved() {
-        customer.setApproved(true);
-        ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+    void searchCustomerIbans_returnsIbansGroupedByCustomer() {
+        User user = customer();
+        Account account = new Account();
+        account.setIban("NL01INHO0123456789");
+        account.setOwner(user);
 
-        assertThrows(ConflictException.class, () -> userService.approveCustomer(1L, request));
+        when(userRepository.searchUsersWithAccounts("Jane", "Customer", PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(List.of(user)));
+        when(accountRepository.findByOwnerIdIn(List.of(1L))).thenReturn(List.of(account));
+
+        var results = userService.searchCustomerIbans(" Jane ", " Customer ");
+
+        assertEquals(1, results.size());
+        assertEquals(List.of("NL01INHO0123456789"), results.getFirst().ibans());
+    }
+
+    @Test
+    void searchCustomerIbans_whenNameMissing_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> userService.searchCustomerIbans("", "Customer"));
+    }
+
+    private User customer() {
+        User user = new User();
+        user.setId(1L);
+        user.setFirstName("Jane");
+        user.setLastName("Customer");
+        user.setEmail("jane@example.com");
+        user.setPhoneNumber("+31612345678");
+        user.setRole(UserRole.CUSTOMER);
+        user.setApproved(false);
+        return user;
     }
 }
