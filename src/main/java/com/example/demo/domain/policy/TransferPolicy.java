@@ -1,6 +1,7 @@
 package com.example.demo.domain.policy;
 
 import com.example.demo.common.enums.AccountType;
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.ForbiddenException;
 import com.example.demo.common.exception.UnauthorizedException;
@@ -20,9 +21,11 @@ public class TransferPolicy {
         enforceAuthenticatedUser(currentUser);
         enforceDifferentAccounts(request);
         enforceApprovedUser(currentUser);
+        enforceEmployeeUser(currentUser);
         enforceCheckingAccount(from);
         enforceSourceAccountOwnership(currentUser, from);
         enforceCheckingAccount(to);
+        enforceSufficientFund(from, request.amount());
         return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
     }
 
@@ -36,37 +39,63 @@ public class TransferPolicy {
         return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
     }
 
-    public void enforceAuthenticatedUser(User currentUser) {
+    private void enforceAuthenticatedUser(User currentUser) {
         if (currentUser == null) {
             throw new UnauthorizedException("Not authenticated");
         }
     }
 
-    public void enforceDifferentAccounts(TransferRequest request) {
+    private void enforceDifferentAccounts(TransferRequest request) {
         if (Objects.equals(request.fromIban(), request.toIban())) {
             throw new ConflictException("Source and destination accounts must be different");
         }
     }
 
-    public void enforceApprovedUser(User currentUser) {
+    private void enforceApprovedUser(User currentUser) {
         if (!currentUser.isApproved()) {
             throw new ForbiddenException("User is not approved");
         }
     }
 
-    public void enforceCheckingAccount(Account account) {
+    private void enforceEmployeeUser(User currentUser) {
+        if (currentUser.getRole() != null && currentUser.getRole() != UserRole.EMPLOYEE) {
+            throw new ForbiddenException("Only Employees are allowed");
+        }
+    }
+
+
+    private void enforceCheckingAccount(Account account) {
         if (account.getType() != AccountType.CHECKING) {
             throw new ConflictException("Only Checking Accounts Allowed");
         }
     }
 
-    public void enforceSourceAccountOwnership(User currentUser, Account account) {
+    private void enforceSufficientFund(Account from, BigDecimal amount) {
+        if (amount.compareTo(from.getBalance()) > 0) {
+            throw new ConflictException("Insufficient Funds");
+        }
+    }
+
+//    public void enforceAbsoluteLimit(Account from, BigDecimal amount) {
+//        if (amount.compareTo(from.getBalance()) > 0) {
+//            throw new ConflictException("Insufficient Funds");
+//        }
+//    }
+//
+//    public void enforceDailyLimit(Account from, BigDecimal amount) {
+//        if (amount.compareTo(from.getBalance()) > 0) {
+//            throw new ConflictException("Insufficient Funds");
+//        }
+//    }
+
+
+    private void enforceSourceAccountOwnership(User currentUser, Account account) {
         if (account.getOwner() == null || !account.getOwner().getId().equals(currentUser.getId())) {
             throw new ForbiddenException("You can only transfer from your own account");
         }
     }
 
-    public void enforceAccountsBelongToUser(User currentUser, Account from, Account to) {
+    private void enforceAccountsBelongToUser(User currentUser, Account from, Account to) {
         if (from.getOwner() == null || to.getOwner() == null
                 || !from.getOwner().getId().equals(currentUser.getId())
                 || !to.getOwner().getId().equals(currentUser.getId())) {
@@ -74,13 +103,13 @@ public class TransferPolicy {
         }
     }
 
-    public void enforcePersonalAccounts(Account from, Account to) {
+    private void enforcePersonalAccounts(Account from, Account to) {
         if (!isPersonalAccount(from.getType()) || !isPersonalAccount(to.getType())) {
             throw new ConflictException("Transfers are allowed only between checking and savings accounts");
         }
     }
 
-    public BigDecimal enforceAbsoluteLimit(Account from, BigDecimal amount) {
+    private BigDecimal enforceAbsoluteLimit(Account from, BigDecimal amount) {
         BigDecimal newBalance = from.getBalance().subtract(amount);
         BigDecimal minimumAllowedBalance = from.getAbsoluteLimit().negate();
         if (newBalance.compareTo(minimumAllowedBalance) < 0) {
@@ -89,7 +118,7 @@ public class TransferPolicy {
         return newBalance;
     }
 
-    public void enforceDailyLimit(Account from, BigDecimal totalTransferredAmount, BigDecimal amount) {
+    private void enforceDailyLimit(Account from, BigDecimal totalTransferredAmount, BigDecimal amount) {
         BigDecimal totalCurrentTransfer = totalTransferredAmount.add(amount);
         if (totalCurrentTransfer.compareTo(from.getDailyLimit()) > 0) {
             throw new ConflictException("Daily limit exceeded");

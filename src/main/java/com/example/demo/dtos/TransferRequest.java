@@ -9,7 +9,8 @@ public record TransferRequest(
         @NotBlank String fromIban,
         @NotBlank String toIban,
         @Positive BigDecimal amount,
-        String description
+        String description,
+        @NotBlank String userEmail
 ) {
 }
 

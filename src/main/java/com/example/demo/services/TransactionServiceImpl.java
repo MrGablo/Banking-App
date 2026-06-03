@@ -6,6 +6,7 @@ import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.ForbiddenException;
 import com.example.demo.common.exception.NotFoundException;
+import com.example.demo.domain.policy.TransferPolicy;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Account;
@@ -30,13 +31,15 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final TransferPolicy transferPolicy;
 
 
     public TransactionServiceImpl(TransactionRepository transactionRepository, AccountRepository accountRepository,
-                                  UserRepository userRepository) {
+                                  UserRepository userRepository, TransferPolicy transferPolicy) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
+        this.transferPolicy = transferPolicy;
     }
 
     @Override
@@ -81,59 +84,29 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Transaction transferFromCheckingToChecking(TransferRequest request){
 
-        if (Objects.equals(request.fromIban(), request.toIban())) {
-            throw new ConflictException("Source and destination accounts must be different");
-        }
 
         User user = userRepository.findByEmail(request.userEmail())
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (!user.isApproved()) {
-            throw new ForbiddenException("User is not approved");
-        }
-
-        if(user.getRole() != UserRole.EMPLOYEE){
-            throw new ForbiddenException("Only Employees are allowed");
-        }
-
         Account from = accountRepository.findByIban(request.fromIban())
-                .orElseThrow(() -> new NotFoundException("From account not found"));
-
-        if(from.getType() != AccountType.CHECKING){
-            throw new ConflictException("Only Checking Accounts Allowed");
-        }
+               .orElseThrow(() -> new NotFoundException("From account not found"));
 
         Account to = accountRepository.findByIban(request.toIban())
-                .orElseThrow(() -> new NotFoundException("To account not found"));
+              .orElseThrow(() -> new NotFoundException("To account not found"));
 
 
-        if(to.getType() != AccountType.CHECKING){
-            throw new ConflictException("Only Checking Accounts Allowed");
-        }
-
-        if(request.amount().compareTo(from.getBalance()) > 0){
-            throw new ConflictException("Insufficient Funds");
-
-        }
-
-        //checking absolute Limit
-        BigDecimal newBalance = from.getBalance().subtract(request.amount());
-        if (newBalance.compareTo(from.getAbsoluteLimit()) < 0) {
-            throw new ConflictException("Absolute limit exceeded");
-        }
-
-        //checking daily Limit
         BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
                 from.getIban(),
                 LocalDate.now().atStartOfDay(),
                 LocalDate.now().atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
-        BigDecimal totalCurrentTransfer = totalTransferedAmount.add(request.amount());
+        transferPolicy.validateCheckingToCheckingTransfer(user, request, from,
+                to, totalTransferedAmount);
 
-        if (totalCurrentTransfer.compareTo(from.getDailyLimit()) > 0){
-            throw new ConflictException("Daily limit exceeded");
-        }
+
+        BigDecimal newBalance = from.getBalance().subtract(request.amount());
+
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
@@ -157,34 +130,27 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional
     public Transaction transferBetweenOwnAccounts(TransferRequest request) {
-        if (Objects.equals(request.fromIban(), request.toIban())) {
-            throw new ConflictException("Source and destination accounts must be different");
-        }
+
 
         User user = userRepository.findByEmail(request.userEmail())
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (!user.isApproved()) {
-            throw new ForbiddenException("User is not approved");
-        }
 
         Account from = accountRepository.findByIban(request.fromIban())
                 .orElseThrow(() -> new NotFoundException("From account not found"));
         Account to = accountRepository.findByIban(request.toIban())
                 .orElseThrow(() -> new NotFoundException("To account not found"));
 
-        if (from.getOwner() == null || to.getOwner() == null || !from.getOwner().getId().equals(user.getId()) || !to.getOwner().getId().equals(user.getId())) {
-            throw new ForbiddenException("Accounts do not belong to user");
-        }
+        BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
+                from.getIban(),
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().atTime(LocalTime.MAX)
+        ).orElse(BigDecimal.ZERO);
 
-        if (!isPersonalAccount(from.getType()) || !isPersonalAccount(to.getType())) {
-            throw new ConflictException("Transfers are allowed only between checking and savings accounts");
-        }
+        transferPolicy.validateOwnAccountTransfer(user, request, from, to, totalTransferedAmount);
 
         BigDecimal newBalance = from.getBalance().subtract(request.amount());
-        if (newBalance.compareTo(from.getAbsoluteLimit()) < 0) {
-            throw new ConflictException("Absolute limit exceeded");
-        }
+
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
@@ -202,10 +168,6 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setDescription(request.description());
 
         return transactionRepository.save(transaction);
-    }
-
-    private boolean isPersonalAccount(AccountType type) {
-        return type == AccountType.CHECKING || type == AccountType.SAVINGS;
     }
 
 //    private void requireEmployee() {
