@@ -1,6 +1,7 @@
 package com.example.demo.domain.policy;
 
 import com.example.demo.common.enums.AccountType;
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.ForbiddenException;
 import com.example.demo.common.exception.UnauthorizedException;
@@ -187,6 +188,7 @@ class TransferPolicyTest {
         User user = new User();
         user.setId(id);
         user.setApproved(approved);
+        user.setRole(UserRole.EMPLOYEE);
         return user;
     }
 

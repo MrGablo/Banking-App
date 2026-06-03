@@ -71,7 +71,7 @@ public class TransferPolicy {
     }
 
     private void enforceSufficientFund(Account from, BigDecimal amount) {
-        if (from.getBalance().compareTo(amount) > 0) {
+        if (from.getBalance().compareTo(amount) < 0) {
             throw new ConflictException("Insufficient Funds");
         }
     }

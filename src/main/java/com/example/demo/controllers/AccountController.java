@@ -33,7 +33,7 @@ public class AccountController {
     @PostMapping("/{iban}/close")
     public ResponseEntity<MessageResponse> closeAccount(@PathVariable String iban) {
         accountService.closeAccount(iban);
-        return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse("Accounts successfully closed"));
+        return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse("Account successfully closed"));
     }
 
     @PutMapping("/{iban}/limits")

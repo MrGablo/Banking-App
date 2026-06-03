@@ -2,9 +2,6 @@ package com.example.demo.services;
 
 import com.example.demo.common.enums.AccountType;
 import com.example.demo.common.enums.Currency;
-import com.example.demo.common.enums.UserRole;
-import com.example.demo.common.exception.ConflictException;
-import com.example.demo.common.exception.ForbiddenException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.domain.policy.TransferPolicy;
 import com.example.demo.dtos.TransactionResponse;
@@ -23,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -102,12 +98,8 @@ public class TransactionServiceImpl implements TransactionService {
                 LocalDate.now().atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
-        transferPolicy.validateCheckingToCheckingTransfer(user, request, from,
+        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(user, request, from,
                 to, totalTransferedAmount);
-
-
-        BigDecimal newBalance = from.getBalance().subtract(request.amount());
-
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
@@ -148,10 +140,7 @@ public class TransactionServiceImpl implements TransactionService {
                 LocalDate.now().atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
-        transferPolicy.validateOwnAccountTransfer(user, request, from, to, totalTransferedAmount);
-
-        BigDecimal newBalance = from.getBalance().subtract(request.amount());
-
+        BigDecimal newBalance = transferPolicy.validateOwnAccountTransfer(user, request, from, to, totalTransferedAmount);
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
