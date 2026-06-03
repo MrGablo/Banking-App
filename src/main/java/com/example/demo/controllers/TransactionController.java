@@ -15,11 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.Sort;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -51,14 +48,17 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
     @GetMapping
+    @PreAuthorize("hasRole('CUSTOMER')")
     public PageResponse<TransactionResponse> getAllTransactions(
-            TransactionSearchRequest filter,
+            @AuthenticationPrincipal User currentUser,
+            @ModelAttribute TransactionSearchRequest filter,
 
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         return PageResponse.of(
                 transactionService.searchTransactions(
+                        currentUser,
                         filter,
                         PageRequest.of(
                                 page,

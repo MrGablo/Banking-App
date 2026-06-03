@@ -47,10 +47,11 @@ public class AtmService {
         transferPolicy.enforceApprovedUser(currentUser);
         transferPolicy.enforceSourceAccountOwnership(currentUser, account);
 
+        LocalDate today = LocalDate.now();
         BigDecimal totalTransferredToday = transactionRepository.sumByFromIbanAndDate(
                 account.getIban(),
-                LocalDate.now().atStartOfDay(),
-                LocalDate.now().atTime(LocalTime.MAX)
+                today.atStartOfDay(),
+                today.atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
         BigDecimal newBalance = transferPolicy.enforceAbsoluteLimit(account, request.amount());

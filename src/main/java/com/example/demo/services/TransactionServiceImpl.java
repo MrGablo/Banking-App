@@ -9,9 +9,10 @@ import com.example.demo.repositories.TransactionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
+import com.example.demo.entity.Account;
+import com.example.demo.entity.User;
+import com.example.demo.specifications.TransactionSpecification;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -65,10 +66,21 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Page<TransactionResponse> searchTransactions(
+            User currentUser,
             TransactionSearchRequest filter,
             Pageable pageable
     ) {
-        return transactionRepository.searchTransactions(filter, pageable)
+        List<String> ownedIbans = accountRepository.findByOwnerId(currentUser.getId())
+                .stream()
+                .map(Account::getIban)
+                .toList();
+
+        if (ownedIbans.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return transactionRepository
+                .findAll(TransactionSpecification.withFilters(filter, ownedIbans), pageable)
                 .map(TransactionResponse::from);
     }
 
