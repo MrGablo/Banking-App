@@ -1,6 +1,7 @@
 package com.example.demo.domain.policy;
 
 import com.example.demo.common.enums.AccountType;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.ForbiddenException;
@@ -16,26 +17,24 @@ import java.util.Objects;
 @Component
 public class TransferPolicy {
 
-    public BigDecimal validateCheckingToCheckingTransfer(User currentUser, TransferRequest request, Account from,
-                                                         Account to, BigDecimal totalTransferredAmount) {
+    public BigDecimal validateTransfer(User currentUser, TransferRequest request, Account from, Account to,
+                                       BigDecimal totalTransferredAmount, TransferType transferType) {
         enforceAuthenticatedUser(currentUser);
         enforceDifferentAccounts(request);
         enforceApprovedUser(currentUser);
-        enforceEmployeeUser(currentUser);
-        enforceCheckingAccount(from);
-        enforceSourceAccountOwnership(currentUser, from);
-        enforceCheckingAccount(to);
-        enforceSufficientFund(from, request.amount());
-        return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
-    }
 
-    public BigDecimal validateOwnAccountTransfer(User currentUser, TransferRequest request, Account from, Account to,
-                                                 BigDecimal totalTransferredAmount) {
-        enforceAuthenticatedUser(currentUser);
-        enforceDifferentAccounts(request);
-        enforceApprovedUser(currentUser);
-        enforceAccountsBelongToUser(currentUser, from, to);
-        enforcePersonalAccounts(from, to);
+        if (transferType == TransferType.CHECKING_TO_CHECKING) {
+            enforceCheckingAccount(from);
+            enforceCheckingAccount(to);
+            if (!isEmployee(currentUser)) {
+                enforceSourceAccountOwnership(currentUser, from);
+            }
+            enforceSufficientFund(from, request.amount());
+        } else {
+            enforceAccountsBelongToUser(currentUser, from, to);
+            enforcePersonalAccounts(from, to);
+        }
+
         return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
     }
 
@@ -56,13 +55,6 @@ public class TransferPolicy {
             throw new ForbiddenException("User is not approved");
         }
     }
-
-    private void enforceEmployeeUser(User currentUser) {
-        if (currentUser.getRole() == null || currentUser.getRole() != UserRole.EMPLOYEE) {
-            throw new ForbiddenException("Only Employees are allowed");
-        }
-    }
-
 
     private void enforceCheckingAccount(Account account) {
         if (account.getType() != AccountType.CHECKING) {
@@ -120,5 +112,9 @@ public class TransferPolicy {
 
     private boolean isPersonalAccount(AccountType type) {
         return type == AccountType.CHECKING || type == AccountType.SAVINGS;
+    }
+
+    private boolean isEmployee(User currentUser) {
+        return currentUser.getRole() == UserRole.EMPLOYEE;
     }
 }

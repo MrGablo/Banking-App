@@ -48,16 +48,16 @@ public class DataSeeder implements CommandLineRunner {
             demoUser.setApproved(true);
             userRepository.save(demoUser);
 
-            User adminUser = new User();
-            adminUser.setFirstName("Kosi");
-            adminUser.setLastName("MaryJane");
-            adminUser.setEmail("kosi.maryJane@example.com");
-            adminUser.setBsn("123456782");
-            adminUser.setPhoneNumber("+31612345633");
-            adminUser.setPasswordHash(passwordEncoder.encode("password123"));
-            adminUser.setRole(UserRole.ADMIN);
-            adminUser.setApproved(true);
-            userRepository.save(adminUser);
+            User firstEmployeeUser = new User();
+            firstEmployeeUser.setFirstName("Kosi");
+            firstEmployeeUser.setLastName("MaryJane");
+            firstEmployeeUser.setEmail("kosi.maryJane@example.com");
+            firstEmployeeUser.setBsn("123456782");
+            firstEmployeeUser.setPhoneNumber("+31612345633");
+            firstEmployeeUser.setPasswordHash(passwordEncoder.encode("password123"));
+            firstEmployeeUser.setRole(UserRole.EMPLOYEE);
+            firstEmployeeUser.setApproved(true);
+            userRepository.save(firstEmployeeUser);
 
             User employeeUser = new User();
             employeeUser.setFirstName("Henry");
@@ -70,7 +70,7 @@ public class DataSeeder implements CommandLineRunner {
             employeeUser.setApproved(true);
             userRepository.save(employeeUser);
 
-            // Admin-owned checking and savings accounts
+            // Employee-owned checking and savings accounts
             Account firstAccount = new Account();
             firstAccount.setIban("NL01INHO0123456789");
             firstAccount.setType(AccountType.CHECKING);
@@ -79,7 +79,7 @@ public class DataSeeder implements CommandLineRunner {
             firstAccount.setDailyLimit(BigDecimal.valueOf(500.00));
             firstAccount.setActive(true);
             firstAccount.setCurrency(Currency.EURO);
-            firstAccount.setOwner(adminUser);
+            firstAccount.setOwner(firstEmployeeUser);
 
             Account secondAccount = new Account();
             secondAccount.setIban("NL02INHO0987654321");
@@ -89,7 +89,7 @@ public class DataSeeder implements CommandLineRunner {
             secondAccount.setDailyLimit(BigDecimal.valueOf(500.00));
             secondAccount.setActive(true);
             secondAccount.setCurrency(Currency.EURO);
-            secondAccount.setOwner(adminUser);
+            secondAccount.setOwner(firstEmployeeUser);
 
             // Demo (customer) account
             Account thirdAccount = new Account();

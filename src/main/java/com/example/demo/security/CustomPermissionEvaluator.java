@@ -36,10 +36,6 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
             return false;
         }
 
-        if (isAdmin(authentication)) {
-            return true;
-        }
-
         if (!"account".equalsIgnoreCase(targetType)) {
             return false;
         }
@@ -67,10 +63,5 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
                 .isPresent();
     }
 
-    private boolean isAdmin(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .map(a -> a.getAuthority())
-                .anyMatch("ROLE_ADMIN"::equals);
-    }
 }
 

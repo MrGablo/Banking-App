@@ -46,7 +46,7 @@ components:
           example: "+31612345678"
         role:
           type: string
-          enum: [CUSTOMER, EMPLOYEE, ADMIN]
+          enum: [CUSTOMER, EMPLOYEE]
           example: "CUSTOMER"
         approved:
           type: boolean
@@ -391,7 +391,7 @@ paths:
 
   /transactions/transfer-checking:
     post:
-      summary: Transfer between own checking accounts
+      summary: Transfer from a checking account to another checking account
       tags:
         - Transactions
       security:

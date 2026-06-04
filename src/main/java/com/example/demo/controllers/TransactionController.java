@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
@@ -32,7 +33,7 @@ public class TransactionController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Transaction> transferChecking(@AuthenticationPrincipal User currentUser,
                                                         @Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transactionService.transferFromCheckingToChecking(request,currentUser);
+        Transaction transaction = transactionService.transfer(request, currentUser, TransferType.CHECKING_TO_CHECKING);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
@@ -40,7 +41,7 @@ public class TransactionController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Transaction> transfer( @AuthenticationPrincipal User currentUser,
                                                  @Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transactionService.transferBetweenOwnAccounts(request,currentUser);
+        Transaction transaction = transactionService.transfer(request, currentUser, TransferType.OWN_ACCOUNTS);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 

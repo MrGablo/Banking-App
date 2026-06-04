@@ -1,7 +1,6 @@
 package com.example.demo.services;
 
-import com.example.demo.common.enums.AccountType;
-import com.example.demo.common.enums.Currency;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.domain.policy.TransferPolicy;
 import com.example.demo.dtos.TransactionResponse;
@@ -9,9 +8,9 @@ import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Account;
 import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
+import com.example.demo.mapper.TransactionMapper;
 import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.TransactionRepository;
-import com.example.demo.repositories.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,16 +25,16 @@ import java.util.Optional;
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
     private final TransferPolicy transferPolicy;
+    private final TransactionMapper transactionMapper;
 
 
     public TransactionServiceImpl(TransactionRepository transactionRepository, AccountRepository accountRepository,
-                                  UserRepository userRepository, TransferPolicy transferPolicy) {
+                                  TransferPolicy transferPolicy, TransactionMapper transactionMapper) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
-        this.userRepository = userRepository;
         this.transferPolicy = transferPolicy;
+        this.transactionMapper = transactionMapper;
     }
 
     @Override
@@ -79,56 +78,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
-    public Transaction transferFromCheckingToChecking(TransferRequest request, User currentUser){
-
-
-        User user = currentUser;
-
-        Account from = accountRepository.findByIban(request.fromIban())
-                .orElseThrow(() -> new NotFoundException("From account not found"));
-
-        Account to = accountRepository.findByIban(request.toIban())
-                .orElseThrow(() -> new NotFoundException("To account not found"));
-
-        BigDecimal totalTransferredAmount = transactionRepository.sumByFromIbanAndDate(
-                from.getIban(),
-                LocalDate.now().atStartOfDay(),
-                LocalDate.now().atTime(LocalTime.MAX)
-        ).orElse(BigDecimal.ZERO);
-
-        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(
-                user,
-                request,
-                from,
-                to,
-                totalTransferredAmount
-        );
-        from.setBalance(newBalance);
-        to.setBalance(to.getBalance().add(request.amount()));
-
-        accountRepository.save(from);
-        accountRepository.save(to);
-
-        Transaction transaction = new Transaction();
-        transaction.setFromIban(request.fromIban());
-        transaction.setToIban(request.toIban());
-        transaction.setAmount(request.amount());
-        transaction.setUserInitiating(user.getFirstName() + " " + user.getLastName());
-        transaction.setType(AccountType.CHECKING);
-        transaction.setCurrency(Currency.EURO);
-        transaction.setDescription(request.description());
-
-        return transactionRepository.save(transaction);
-
-    }
-
-    @Override
-    @Transactional
-    public Transaction transferBetweenOwnAccounts(TransferRequest request, User currentUser) {
-
-
-        User user = currentUser;
-
+    public Transaction transfer(TransferRequest request, User currentUser, TransferType transferType) {
         Account from = accountRepository.findByIban(request.fromIban())
                 .orElseThrow(() -> new NotFoundException("From account not found"));
         Account to = accountRepository.findByIban(request.toIban())
@@ -140,12 +90,13 @@ public class TransactionServiceImpl implements TransactionService {
                 LocalDate.now().atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
-        BigDecimal newBalance = transferPolicy.validateOwnAccountTransfer(
-                user,
+        BigDecimal newBalance = transferPolicy.validateTransfer(
+                currentUser,
                 request,
                 from,
                 to,
-                totalTransferredAmount
+                totalTransferredAmount,
+                transferType
         );
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
@@ -153,15 +104,7 @@ public class TransactionServiceImpl implements TransactionService {
         accountRepository.save(from);
         accountRepository.save(to);
 
-        Transaction transaction = new Transaction();
-        transaction.setFromIban(from.getIban());
-        transaction.setToIban(to.getIban());
-        transaction.setAmount(request.amount());
-        transaction.setUserInitiating(user.getFirstName() + " " + user.getLastName());
-        transaction.setType(from.getType());
-        transaction.setCurrency(from.getCurrency());
-        transaction.setDescription(request.description());
-
+        Transaction transaction = transactionMapper.toEntity(request, from, to, currentUser);
         return transactionRepository.save(transaction);
     }
 

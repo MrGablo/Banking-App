@@ -30,7 +30,7 @@ public class UserController {
     }
 
     @GetMapping("")
-    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public PageResponse<UserResponse> getCustomersWithoutAccounts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -40,7 +40,7 @@ public class UserController {
     }
 
     @GetMapping("/customer-ibans")
-    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE')")
     public ResponseEntity<List<CustomerIbanResponse>> searchCustomerIbans(
             @RequestParam String firstName,
             @RequestParam String lastName) {
@@ -48,7 +48,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/approve")
-    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<UserResponse> approveCustomer(
             @PathVariable Long userId,
             @Valid @RequestBody ApproveCustomerRequest request) {
