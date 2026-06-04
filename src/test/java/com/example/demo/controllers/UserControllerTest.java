@@ -31,7 +31,7 @@ class UserControllerTest {
     private UserController userController;
 
     @Test
-    void getCustomersWithoutAccounts_capsPageSizeAtOneHundred() {
+    void customersPageSizeIsCapped() {
         UserResponse user = userResponse();
         when(userService.getCustomersWithoutAccounts(PageRequest.of(0, 100)))
                 .thenReturn(new PageImpl<>(List.of(user), PageRequest.of(0, 100), 1));
@@ -43,7 +43,7 @@ class UserControllerTest {
     }
 
     @Test
-    void searchCustomerIbans_returnsMatchingCustomers() {
+    void customerIbanSearchReturnsMatches() {
         CustomerIbanResponse result = new CustomerIbanResponse(
                 1L,
                 "Jane",
@@ -58,7 +58,7 @@ class UserControllerTest {
     }
 
     @Test
-    void approveCustomer_returnsCreatedUserResponse() {
+    void approveCustomerReturnsCreated() {
         ApproveCustomerRequest request = new ApproveCustomerRequest(
                 new BigDecimal("100.00"),
                 new BigDecimal("500.00")

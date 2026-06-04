@@ -32,7 +32,7 @@ class AuthControllerTest {
     private AuthController authController;
 
     @Test
-    void register_returnsCreated() {
+    void registerReturnsCreated() {
         RegisterRequest request = registerRequest();
 
         var response = authController.register(request);
@@ -42,7 +42,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_returnsAuthResponse() {
+    void loginReturnsAuthResponse() {
         LoginRequest request = new LoginRequest("jane@example.com", "password123");
         AuthResponse authResponse = new AuthResponse("Welcome back", true, "jwt-token");
         when(authService.login(request)).thenReturn(authResponse);
@@ -53,7 +53,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void getCurrentUser_withBearerToken_returnsCurrentUser() {
+    void bearerTokenReturnsCurrentUser() {
         UserDTO user = new UserDTO(1L, "Jane", "Customer", "jane@example.com", "+31612345678", "CUSTOMER", true);
         when(jwtService.extractSubject("jwt-token")).thenReturn("jane@example.com");
         when(authService.getCurrentUser("jane@example.com")).thenReturn(user);
@@ -64,7 +64,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void getCurrentUser_withoutBearerHeader_throwsUnauthorizedException() {
+    void missingBearerThrows() {
         assertThrows(UnauthorizedException.class, () -> authController.getCurrentUser("jwt-token"));
     }
 

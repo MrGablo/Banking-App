@@ -43,7 +43,7 @@ class AuthServiceImplTest {
     private AuthServiceImpl authService;
 
     @Test
-    void register_whenEmailAlreadyExists_throwsDuplicateException() {
+    void duplicateEmailThrows() {
         RegisterRequest request = registerRequest();
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(new User()));
 
@@ -51,7 +51,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void register_whenUnique_savesMappedUser() {
+    void uniqueRegisterSavesUser() {
         RegisterRequest request = registerRequest();
         User user = new User();
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.empty());
@@ -65,7 +65,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void login_whenPasswordMatches_returnsTokenAndApprovedMessage() {
+    void validLoginReturnsToken() {
         LoginRequest request = new LoginRequest("jane@example.com", "password123");
         User user = user(true);
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(user));
@@ -80,7 +80,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void login_whenPasswordDoesNotMatch_throwsUnauthorizedException() {
+    void wrongPasswordThrows() {
         LoginRequest request = new LoginRequest("jane@example.com", "wrong");
         User user = user(true);
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(user));
@@ -90,7 +90,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void login_whenUserPendingApproval_returnsPendingMessage() {
+    void pendingLoginReturnsMessage() {
         LoginRequest request = new LoginRequest("jane@example.com", "password123");
         User user = user(false);
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(user));

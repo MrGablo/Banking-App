@@ -32,7 +32,7 @@ class AccountEntityIntegrationTest {
     private EntityManager entityManager;
 
     @Test
-    void saveAndLoad_persistsAccountFieldsAndTimestamps() {
+    void accountPersists() {
         User owner = userRepository.save(customer("account-owner@example.com", "123456780"));
 
         Account account = new Account();
@@ -63,7 +63,7 @@ class AccountEntityIntegrationTest {
     }
 
     @Test
-    void save_whenDuplicateIban_throwsDataIntegrityViolationException() {
+    void duplicateIbanThrows() {
         User owner = userRepository.save(customer("duplicate-account-owner@example.com", "123456781"));
 
         accountRepository.saveAndFlush(account("NL12INHO0111111111", owner));
@@ -77,7 +77,7 @@ class AccountEntityIntegrationTest {
     }
 
     @Test
-    void deleteByIban_removesExistingAccount() {
+    void accountDeletesByIban() {
         User owner = userRepository.save(customer("delete-account-owner@example.com", "123456782"));
         accountRepository.saveAndFlush(account("NL43INHO0222222222", owner));
 

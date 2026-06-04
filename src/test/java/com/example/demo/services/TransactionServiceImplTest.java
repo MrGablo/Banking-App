@@ -34,7 +34,7 @@ class TransactionServiceImplTest {
     private TransactionServiceImpl transactionService;
 
     @Test
-    void deleteTransaction_whenExists_deletesAndReturnsTrue() {
+    void existingTransactionDeletes() {
         when(transactionRepository.existsById(10L)).thenReturn(true);
 
         boolean deleted = transactionService.deleteTransaction(10L);
@@ -44,7 +44,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void getTransactionsForAccount_whenAccountMissing_throwsNotFoundException() {
+    void missingAccountThrows() {
         when(accountRepository.existsByIban("missing")).thenReturn(false);
 
         assertThrows(NotFoundException.class,
@@ -52,7 +52,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void getTransactionsForAccount_mapsTransactionsToResponses() {
+    void accountTransactionsMapped() {
         Transaction transaction = new Transaction();
         transaction.setId(1L);
         transaction.setFromIban("NL01INHO0123456789");

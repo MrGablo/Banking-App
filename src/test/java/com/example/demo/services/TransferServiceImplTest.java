@@ -41,7 +41,7 @@ class TransferServiceImplTest {
     private TransferServiceImpl transferService;
 
     @Test
-    void transferFromCheckingToChecking_updatesBalancesAndStoresTransaction() {
+    void checkingTransferSavesTransaction() {
         User user = user();
         Account from = account("NL01INHO0123456789", AccountType.CHECKING, new BigDecimal("100.00"));
         Account to = account("NL02INHO0987654321", AccountType.CHECKING, new BigDecimal("25.00"));
@@ -66,7 +66,7 @@ class TransferServiceImplTest {
     }
 
     @Test
-    void transferBetweenOwnAccounts_whenToAccountMissing_throwsNotFoundException() {
+    void missingOwnTransferTargetThrows() {
         Account from = account("NL01INHO0123456789", AccountType.CHECKING, new BigDecimal("100.00"));
         TransferRequest request = new TransferRequest(from.getIban(), "missing", new BigDecimal("10.00"), "Move");
 
@@ -77,7 +77,7 @@ class TransferServiceImplTest {
     }
 
     @Test
-    void transferBetweenOwnAccounts_usesFromAccountTypeAndCurrencyOnTransaction() {
+    void ownTransferKeepsSourceDetails() {
         User user = user();
         Account from = account("NL01INHO0123456789", AccountType.SAVINGS, new BigDecimal("100.00"));
         Account to = account("NL02INHO0987654321", AccountType.CHECKING, new BigDecimal("25.00"));

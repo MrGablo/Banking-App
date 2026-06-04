@@ -35,7 +35,7 @@ class AccountControllerTest {
     private AccountController accountController;
 
     @Test
-    void closeAccount_returnsNoContent() {
+    void closeAccountReturnsNoContent() {
         var response = accountController.closeAccount("NL01INHO0123456789");
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
@@ -43,7 +43,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void updateLimits_returnsNoContent() {
+    void updateLimitsReturnsNoContent() {
         UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("500.00"));
 
         var response = accountController.updateLimits("NL01INHO0123456789", request);
@@ -53,7 +53,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void getAllAccounts_capsPageSizeAtOneHundred() {
+    void accountsPageSizeIsCapped() {
         AccountResponse account = new AccountResponse(
                 "NL01INHO0123456789",
                 AccountType.CHECKING,
@@ -74,7 +74,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void getAccountTransactions_delegatesToTransactionService() {
+    void accountTransactionsReturned() {
         TransactionResponse transaction = new TransactionResponse(
                 1L,
                 "NL01INHO0123456789",

@@ -23,7 +23,7 @@ class UserEntityIntegrationTest {
     private EntityManager entityManager;
 
     @Test
-    void saveAndLoad_persistsUserFieldsAndTimestamps() {
+    void userPersists() {
         User saved = userRepository.saveAndFlush(customer("jane.customer@example.com", "223456789"));
         entityManager.clear();
 
@@ -42,7 +42,7 @@ class UserEntityIntegrationTest {
     }
 
     @Test
-    void save_whenDuplicateEmail_throwsDataIntegrityViolationException() {
+    void duplicateEmailThrows() {
         userRepository.saveAndFlush(customer("duplicate@example.com", "323456789"));
 
         User duplicate = customer("duplicate@example.com", "423456789");
@@ -54,7 +54,7 @@ class UserEntityIntegrationTest {
     }
 
     @Test
-    void findCustomersWithoutAccounts_returnsOnlyCustomersWithoutAccounts() {
+    void customersWithoutAccountsFound() {
         userRepository.saveAndFlush(customer("no.accounts@example.com", "523456789"));
         userRepository.saveAndFlush(employee("employee@example.com", "623456789"));
 
