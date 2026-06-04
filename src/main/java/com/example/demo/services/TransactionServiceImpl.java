@@ -113,7 +113,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setFromIban(request.fromIban());
         transaction.setToIban(request.toIban());
         transaction.setAmount(request.amount());
-        transaction.setUserInitiating(user.getFirstName());
+        transaction.setUserInitiating(user.getFirstName() + " " + user.getLastName());
         transaction.setType(AccountType.CHECKING);
         transaction.setCurrency(Currency.EURO);
         transaction.setDescription(request.description());
