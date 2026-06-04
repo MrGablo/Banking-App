@@ -35,7 +35,7 @@ class TransactionControllerTest {
     private TransactionController transactionController;
 
     @Test
-    void transferChecking_returnsCreatedTransaction() {
+    void checkingTransferReturnsCreated() {
         User user = new User();
         TransferRequest request = transferRequest();
         Transaction transaction = new Transaction();
@@ -48,7 +48,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void transfer_returnsCreatedTransaction() {
+    void ownTransferReturnsCreated() {
         User user = new User();
         TransferRequest request = transferRequest();
         Transaction transaction = new Transaction();
@@ -61,7 +61,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getAllTransactions_capsPageSizeAtOneHundred() {
+    void transactionsPageSizeIsCapped() {
         TransactionResponse transaction = new TransactionResponse(
                 1L,
                 "NL01INHO0123456789",

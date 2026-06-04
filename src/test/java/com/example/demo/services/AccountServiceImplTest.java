@@ -31,7 +31,7 @@ class AccountServiceImplTest {
     private AccountServiceImpl accountService;
 
     @Test
-    void deleteAccount_whenIbanExists_deletesAndReturnsTrue() {
+    void existingAccountDeletes() {
         when(accountRepository.existsByIban("NL01INHO0123456789")).thenReturn(true);
 
         boolean deleted = accountService.deleteAccount("NL01INHO0123456789");
@@ -41,7 +41,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void deleteAccount_whenIbanMissing_returnsFalse() {
+    void missingAccountReturnsFalse() {
         when(accountRepository.existsByIban("NL01INHO0123456789")).thenReturn(false);
 
         boolean deleted = accountService.deleteAccount("NL01INHO0123456789");
@@ -52,7 +52,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void closeAccount_whenActive_setsInactiveAndSaves() {
+    void activeAccountCloses() {
         Account account = new Account();
         account.setActive(true);
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
@@ -64,14 +64,14 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void closeAccount_whenMissing_throwsNotFoundException() {
+    void missingAccountThrows() {
         when(accountRepository.findByIban("missing")).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> accountService.closeAccount("missing"));
     }
 
     @Test
-    void closeAccount_whenAlreadyClosed_throwsConflictException() {
+    void closedAccountThrows() {
         Account account = new Account();
         account.setActive(false);
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
@@ -80,7 +80,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void updateLimits_updatesAbsoluteAndDailyLimits() {
+    void limitsUpdate() {
         Account account = new Account();
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 

@@ -20,7 +20,7 @@ class TransferPolicyTest {
     private final TransferPolicy transferPolicy = new TransferPolicy();
 
     @Test
-    void validateCheckingToCheckingTransferReturnsNewBalanceWhenRulesPass() {
+    void checkingTransferSucceeds() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -38,7 +38,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateCheckingToCheckingTransferRejectsUnauthenticatedUser() {
+    void checkingTransferNeedsUser() {
         Account from = account(AccountType.CHECKING, approvedUser(1L), "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
         TransferRequest request = request("NL01INHO0111111111", "NL01INHO0222222222", "40.00");
@@ -53,7 +53,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateCheckingToCheckingTransferRejectsSameSourceAndDestination() {
+    void checkingTransferNeedsDifferentAccounts() {
         User user = approvedUser(1L);
         Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         TransferRequest request = request("NL01INHO0111111111", "NL01INHO0111111111", "40.00");
@@ -68,7 +68,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateCheckingToCheckingTransferRejectsUnapprovedUser() {
+    void checkingTransferNeedsApproval() {
         User user = user(1L, false);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -84,7 +84,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateCheckingToCheckingTransferRejectsNonCheckingAccounts() {
+    void checkingTransferNeedsCheckingAccounts() {
         User user = approvedUser(1L);
         Account from = account(AccountType.SAVINGS, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -100,7 +100,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateCheckingToCheckingTransferRejectsNonOwnerSourceAccount() {
+    void checkingTransferNeedsSourceOwner() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, approvedUser(2L), "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(3L), "25.00", "0.00", "500.00");
@@ -116,7 +116,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateOwnAccountTransferAllowsCheckingAndSavingsOwnedByUser() {
+    void ownTransferAllowsOwnAccounts() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.SAVINGS, user, "25.00", "0.00", "500.00");
@@ -132,7 +132,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateOwnAccountTransferRejectsAccountsNotOwnedByUser() {
+    void ownTransferNeedsOwnership() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.SAVINGS, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -148,7 +148,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateOwnAccountTransferRejectsAbsoluteLimitExceeded() {
+    void ownTransferChecksAbsoluteLimit() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "10.00", "5.00", "500.00");
         Account to = account(AccountType.SAVINGS, user, "25.00", "0.00", "500.00");
@@ -164,7 +164,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateOwnAccountTransferRejectsDailyLimitExceeded() {
+    void ownTransferChecksDailyLimit() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "50.00");
         Account to = account(AccountType.SAVINGS, user, "25.00", "0.00", "500.00");

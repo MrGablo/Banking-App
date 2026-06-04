@@ -45,7 +45,7 @@ class UserServiceImplTest {
     private UserServiceImpl userService;
 
     @Test
-    void approveCustomer_whenValid_approvesUserAndCreatesCheckingAndSavingsAccounts() {
+    void approveCustomerCreatesAccounts() {
         User user = customer();
         Account checking = new Account();
         Account savings = new Account();
@@ -72,7 +72,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void approveCustomer_whenMissing_throwsNotFoundException() {
+    void missingCustomerThrows() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
@@ -80,7 +80,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void approveCustomer_whenAlreadyApproved_throwsConflictException() {
+    void approvedCustomerThrows() {
         User user = customer();
         user.setApproved(true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -90,7 +90,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void searchCustomerIbans_returnsIbansGroupedByCustomer() {
+    void customerIbanSearchGroupsResults() {
         User user = customer();
         Account account = new Account();
         account.setIban("NL01INHO0123456789");
@@ -107,7 +107,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void searchCustomerIbans_whenNameMissing_throwsIllegalArgumentException() {
+    void blankSearchThrows() {
         assertThrows(IllegalArgumentException.class, () -> userService.searchCustomerIbans("", "Customer"));
     }
 

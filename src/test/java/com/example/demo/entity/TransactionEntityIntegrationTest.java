@@ -26,7 +26,7 @@ class TransactionEntityIntegrationTest {
     private EntityManager entityManager;
 
     @Test
-    void saveAndLoad_persistsTransactionFieldsAndTimestamps() {
+    void transactionPersists() {
         Transaction saved = transactionRepository.saveAndFlush(transaction(
                 "NL01INHO0123456789",
                 "NL02INHO0987654321",
@@ -49,7 +49,7 @@ class TransactionEntityIntegrationTest {
     }
 
     @Test
-    void findByFromIbanOrToIban_returnsIncomingAndOutgoingTransactions() {
+    void accountTransactionsFound() {
         transactionRepository.save(transaction("NL01INHO0123456789", "NL02INHO0987654321", "75.00"));
         transactionRepository.save(transaction("NL03INHO0123456789", "NL01INHO0123456789", "25.00"));
         transactionRepository.saveAndFlush(transaction("NL03INHO0123456789", "NL04INHO0987654321", "10.00"));
@@ -64,7 +64,7 @@ class TransactionEntityIntegrationTest {
     }
 
     @Test
-    void sumByFromIbanAndDate_returnsTotalForCurrentDay() {
+    void dailyTransferSumCalculated() {
         transactionRepository.save(transaction("NL01INHO0123456789", "NL02INHO0987654321", "75.00"));
         transactionRepository.saveAndFlush(transaction("NL01INHO0123456789", "NL03INHO0987654321", "25.00"));
 
