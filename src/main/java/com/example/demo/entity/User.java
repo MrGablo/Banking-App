@@ -39,10 +39,14 @@ public class User {
 
     private boolean approved;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @PrePersist
     public void prePersist(){
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        active = true;
     }
 
     @PreUpdate

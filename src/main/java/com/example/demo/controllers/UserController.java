@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.ApproveCustomerRequest;
 import com.example.demo.dtos.CustomerIbanResponse;
+import com.example.demo.dtos.MessageResponse;
 import com.example.demo.dtos.UserResponse;
 import com.example.demo.services.UserService;
 import jakarta.validation.Valid;
@@ -54,6 +55,13 @@ public class UserController {
             @Valid @RequestBody ApproveCustomerRequest request) {
         UserResponse response = userService.approveCustomer(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<MessageResponse> deactivateCustomer(@PathVariable Long userId) {
+        userService.deactivateCustomer(userId);
+        return ResponseEntity.ok(new MessageResponse("Customer successfully deactivated"));
     }
 
 }

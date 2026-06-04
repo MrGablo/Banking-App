@@ -41,7 +41,7 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
         }
 
         String permissionName = permission == null ? "" : permission.toString().toLowerCase();
-        if (!"view".equals(permissionName) && !"update".equals(permissionName) && !"delete".equals(permissionName) && !"manage".equals(permissionName)) {
+        if (!"view".equals(permissionName) && !"update".equals(permissionName) && !"manage".equals(permissionName)) {
             return false;
         }
 

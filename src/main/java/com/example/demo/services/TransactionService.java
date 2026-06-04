@@ -17,8 +17,6 @@ public interface TransactionService {
 
     Transaction addTransaction(Transaction transaction);
 
-    boolean deleteTransaction(long id);
-
     public Page<TransactionResponse> getAllTransactions(Pageable pageable);
 
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable);

@@ -51,6 +51,9 @@ components:
         approved:
           type: boolean
           example: true
+        active:
+          type: boolean
+          example: true
 
     Account:
       type: object
@@ -536,3 +539,24 @@ paths:
                 $ref: '#/components/schemas/User'
         '403':
           description: Forbidden
+
+  /users/{userId}:
+    delete:
+      summary: Deactivate customer
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Customer deactivated
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found

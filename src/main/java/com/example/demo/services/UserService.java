@@ -16,5 +16,7 @@ public interface UserService {
 
     public UserResponse approveCustomer(Long userId, ApproveCustomerRequest request);
 
+    public void deactivateCustomer(Long userId);
+
     List<CustomerIbanResponse> searchCustomerIbans(String firstName, String lastName);
 }

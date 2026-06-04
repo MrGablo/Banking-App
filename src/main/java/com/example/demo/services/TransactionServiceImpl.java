@@ -48,15 +48,6 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public boolean deleteTransaction(long id) {
-        if (transactionRepository.existsById(id)) {
-            transactionRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
     public Page<TransactionResponse> getAllTransactions(Pageable pageable) {
         //requireEmployee();
         return transactionRepository.findAll(pageable)

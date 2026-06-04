@@ -30,6 +30,7 @@ public class UserMapper {
         user.setPhoneNumber(request.phoneNumber());
         user.setRole(UserRole.CUSTOMER);
         user.setApproved(false);
+        user.setActive(true);
         user.setPasswordHash(hashedPassword);
 
         return user;
@@ -47,7 +48,8 @@ public class UserMapper {
                 user.getEmail(),
                 user.getPhoneNumber(),
                 user.getRole().name(),
-                user.isApproved()
+                user.isApproved(),
+                user.isActive()
         );
     }
 }

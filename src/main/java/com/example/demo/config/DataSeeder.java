@@ -46,6 +46,7 @@ public class DataSeeder implements CommandLineRunner {
             demoUser.setPasswordHash(passwordEncoder.encode("password123"));
             demoUser.setRole(UserRole.CUSTOMER);
             demoUser.setApproved(true);
+            demoUser.setActive(true);
             userRepository.save(demoUser);
 
             User firstEmployeeUser = new User();
@@ -57,6 +58,7 @@ public class DataSeeder implements CommandLineRunner {
             firstEmployeeUser.setPasswordHash(passwordEncoder.encode("password123"));
             firstEmployeeUser.setRole(UserRole.EMPLOYEE);
             firstEmployeeUser.setApproved(true);
+            firstEmployeeUser.setActive(true);
             userRepository.save(firstEmployeeUser);
 
             User employeeUser = new User();
@@ -68,6 +70,7 @@ public class DataSeeder implements CommandLineRunner {
             employeeUser.setPasswordHash(passwordEncoder.encode("password123"));
             employeeUser.setRole(UserRole.EMPLOYEE);
             employeeUser.setApproved(true);
+            employeeUser.setActive(true);
             userRepository.save(employeeUser);
 
             // Employee-owned checking and savings accounts
