@@ -82,25 +82,27 @@ public class TransactionServiceImpl implements TransactionService {
     public Transaction transferFromCheckingToChecking(TransferRequest request, User currentUser){
 
 
-        User user = userRepository.findByEmail(currentUser.getEmail())
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = currentUser;
 
         Account from = accountRepository.findByIban(request.fromIban())
-               .orElseThrow(() -> new NotFoundException("From account not found"));
+                .orElseThrow(() -> new NotFoundException("From account not found"));
 
         Account to = accountRepository.findByIban(request.toIban())
-              .orElseThrow(() -> new NotFoundException("To account not found"));
+                .orElseThrow(() -> new NotFoundException("To account not found"));
 
-
-        BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
+        BigDecimal totalTransferredAmount = transactionRepository.sumByFromIbanAndDate(
                 from.getIban(),
                 LocalDate.now().atStartOfDay(),
                 LocalDate.now().atTime(LocalTime.MAX)
         ).orElse(BigDecimal.ZERO);
 
-        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(user, request, from,
-                to, totalTransferedAmount);
-
+        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(
+                user,
+                request,
+                from,
+                to,
+                totalTransferredAmount
+        );
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
 
