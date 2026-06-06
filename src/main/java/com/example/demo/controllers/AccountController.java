@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,12 +32,14 @@ public class AccountController {
     }
 
     @PostMapping("/{iban}/close")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN')")
     public ResponseEntity<MessageResponse> closeAccount(@PathVariable String iban) {
         accountService.closeAccount(iban);
         return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse("Account successfully closed"));
     }
 
     @PutMapping("/{iban}/limits")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN')")
     public ResponseEntity<MessageResponse> updateLimits(
             @PathVariable String iban,
             @Valid @RequestBody UpdateLimitsRequest request) {
@@ -45,6 +48,7 @@ public class AccountController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN')")
     public PageResponse<AccountResponse> getAllAccounts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

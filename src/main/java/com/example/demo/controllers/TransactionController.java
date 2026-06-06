@@ -29,7 +29,7 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer-checking")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'CUSTOMER', 'ADMIN')")
     public ResponseEntity<Transaction> transferChecking(@AuthenticationPrincipal User currentUser,
                                                         @Valid @RequestBody TransferRequest request) {
         Transaction transaction = transactionService.transferFromCheckingToChecking(request,currentUser);
@@ -37,7 +37,7 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
     public ResponseEntity<Transaction> transfer( @AuthenticationPrincipal User currentUser,
                                                  @Valid @RequestBody TransferRequest request) {
         Transaction transaction = transactionService.transferBetweenOwnAccounts(request,currentUser);
@@ -45,6 +45,7 @@ public class TransactionController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
     public PageResponse<TransactionResponse> getAllTransactions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

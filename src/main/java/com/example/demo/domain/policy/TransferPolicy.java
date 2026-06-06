@@ -21,9 +21,8 @@ public class TransferPolicy {
         enforceAuthenticatedUser(currentUser);
         enforceDifferentAccounts(request);
         enforceApprovedUser(currentUser);
-        enforceEmployeeUser(currentUser);
+        enforceEmployeeOrCustomerUser(currentUser);
         enforceCheckingAccount(from);
-        enforceSourceAccountOwnership(currentUser, from);
         enforceCheckingAccount(to);
         enforceSufficientFund(from, request.amount());
         return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
@@ -57,8 +56,8 @@ public class TransferPolicy {
         }
     }
 
-    private void enforceEmployeeUser(User currentUser) {
-        if (currentUser.getRole() == null || currentUser.getRole() != UserRole.EMPLOYEE) {
+    private void enforceEmployeeOrCustomerUser(User currentUser) {
+        if (currentUser.getRole() == null || (currentUser.getRole() != UserRole.EMPLOYEE && currentUser.getRole() != UserRole.CUSTOMER)) {
             throw new ForbiddenException("Only Employees are allowed");
         }
     }
@@ -71,8 +70,11 @@ public class TransferPolicy {
     }
 
     private void enforceSufficientFund(Account from, BigDecimal amount) {
-        if (from.getBalance().compareTo(amount) < 0) {
-            throw new ConflictException("Insufficient Funds");
+        BigDecimal projectedBalance = from.getBalance().subtract(amount);
+        BigDecimal minimumAllowedBalance = from.getAbsoluteLimit().negate();
+        if (projectedBalance.compareTo(minimumAllowedBalance) < 0)
+        {
+            throw new ConflictException("Absolute limit exceeded");
         }
     }
 

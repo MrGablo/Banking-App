@@ -2,13 +2,16 @@ package com.example.demo.services;
 
 import com.example.demo.common.enums.AccountType;
 import com.example.demo.common.enums.Currency;
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.NotFoundException;
+import com.example.demo.common.exception.UnauthorizedException;
 import com.example.demo.domain.policy.TransferPolicy;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Account;
 import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
+import com.example.demo.mapper.TransactionMapper;
 import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.TransactionRepository;
 import com.example.demo.repositories.UserRepository;
@@ -28,14 +31,16 @@ public class TransactionServiceImpl implements TransactionService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final TransferPolicy transferPolicy;
+    private final TransactionMapper transactionMapper;
 
 
     public TransactionServiceImpl(TransactionRepository transactionRepository, AccountRepository accountRepository,
-                                  UserRepository userRepository, TransferPolicy transferPolicy) {
+                                  UserRepository userRepository, TransferPolicy transferPolicy, TransactionMapper transactionMapper) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.transferPolicy = transferPolicy;
+        this.transactionMapper = transactionMapper;
     }
 
     @Override
@@ -79,26 +84,22 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
-    public Transaction transferFromCheckingToChecking(TransferRequest request, User currentUser){
+    public Transaction transferFromCheckingToChecking(TransferRequest request, User currentUser) {
 
+        validateUser(currentUser);
 
-        User user = userRepository.findByEmail(currentUser.getEmail())
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        validateUserAuthorization(request, currentUser);
 
         Account from = accountRepository.findByIban(request.fromIban())
-               .orElseThrow(() -> new NotFoundException("From account not found"));
+                .orElseThrow(() -> new NotFoundException("From account not found"));
 
         Account to = accountRepository.findByIban(request.toIban())
-              .orElseThrow(() -> new NotFoundException("To account not found"));
+                .orElseThrow(() -> new NotFoundException("To account not found"));
 
 
-        BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
-                from.getIban(),
-                LocalDate.now().atStartOfDay(),
-                LocalDate.now().atTime(LocalTime.MAX)
-        ).orElse(BigDecimal.ZERO);
+        BigDecimal totalTransferedAmount = calculateTotalTransfer(request);
 
-        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(user, request, from,
+        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(currentUser, request, from,
                 to, totalTransferedAmount);
 
         from.setBalance(newBalance);
@@ -107,14 +108,7 @@ public class TransactionServiceImpl implements TransactionService {
         accountRepository.save(from);
         accountRepository.save(to);
 
-        Transaction transaction = new Transaction();
-        transaction.setFromIban(request.fromIban());
-        transaction.setToIban(request.toIban());
-        transaction.setAmount(request.amount());
-        transaction.setUserInitiating(user.getFirstName());
-        transaction.setType(AccountType.CHECKING);
-        transaction.setCurrency(Currency.EURO);
-        transaction.setDescription(request.description());
+        Transaction transaction = transactionMapper.toEntity(request, currentUser);
 
         return transactionRepository.save(transaction);
 
@@ -124,23 +118,19 @@ public class TransactionServiceImpl implements TransactionService {
     @Transactional
     public Transaction transferBetweenOwnAccounts(TransferRequest request, User currentUser) {
 
+        validateUser(currentUser);
 
-        User user = userRepository.findByEmail(currentUser.getEmail())
-                .orElseThrow(() -> new NotFoundException("User not found"));
-
+        validateUserAuthorization(request, currentUser);
 
         Account from = accountRepository.findByIban(request.fromIban())
                 .orElseThrow(() -> new NotFoundException("From account not found"));
         Account to = accountRepository.findByIban(request.toIban())
                 .orElseThrow(() -> new NotFoundException("To account not found"));
 
-        BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
-                from.getIban(),
-                LocalDate.now().atStartOfDay(),
-                LocalDate.now().atTime(LocalTime.MAX)
-        ).orElse(BigDecimal.ZERO);
+        BigDecimal totalTransferedAmount = calculateTotalTransfer(request);
 
-        BigDecimal newBalance = transferPolicy.validateOwnAccountTransfer(user, request, from, to, totalTransferedAmount);
+        BigDecimal newBalance = transferPolicy.validateOwnAccountTransfer(currentUser, request, from, to,
+                totalTransferedAmount);
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
@@ -148,22 +138,39 @@ public class TransactionServiceImpl implements TransactionService {
         accountRepository.save(from);
         accountRepository.save(to);
 
-        Transaction transaction = new Transaction();
-        transaction.setFromIban(from.getIban());
-        transaction.setToIban(to.getIban());
-        transaction.setAmount(request.amount());
-        transaction.setUserInitiating(user.getFirstName());
-        transaction.setType(from.getType());
-        transaction.setCurrency(from.getCurrency());
-        transaction.setDescription(request.description());
+        Transaction transaction = transactionMapper.toEntity(request, currentUser);
 
         return transactionRepository.save(transaction);
     }
 
-//    private void requireEmployee() {
-//        if (authContext.getCurrentUserRole() != UserRole.EMPLOYEE) {
-//            throw new ForbiddenException("Employee role required");
-//        }
-//    }
+    private BigDecimal calculateTotalTransfer(TransferRequest request) {
+        Account from = accountRepository.findByIban(request.fromIban())
+                .orElseThrow(() -> new NotFoundException("From account not found"));
+
+        BigDecimal totalTransferedAmount = transactionRepository.sumByFromIbanAndDate(
+                from.getIban(),
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().atTime(LocalTime.MAX)
+        ).orElse(BigDecimal.ZERO);
+        return totalTransferedAmount;
+    }
+
+    private void validateUser(User currentUser){
+        userRepository.findByEmail(currentUser.getEmail())
+                .orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    private void validateUserAuthorization(TransferRequest request, User currentUser){
+        if(currentUser.getRole() == UserRole.CUSTOMER){
+            for(Account account: currentUser.getAccounts()){
+                if(account.getIban().equals(request.fromIban())){
+                    return;
+                }
+            }
+            throw new UnauthorizedException("Unauthorized to transfer from this account");
+        }
+    }
 }
+
+
 
