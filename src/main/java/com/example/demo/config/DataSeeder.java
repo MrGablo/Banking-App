@@ -1,6 +1,7 @@
 package com.example.demo.config;
 
 import com.example.demo.common.enums.Currency;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.entity.Account;
 import com.example.demo.common.enums.AccountType;
 import com.example.demo.entity.Transaction;
@@ -114,7 +115,7 @@ public class DataSeeder implements CommandLineRunner {
             firstTransaction.setToIban("NL02INHO0987654321");
             firstTransaction.setAmount(BigDecimal.valueOf(75.00));
             firstTransaction.setUserInitiating("");
-            firstTransaction.setType(AccountType.CHECKING);
+            firstTransaction.setTransferType(TransferType.CHECKING_TO_CHECKING);
             firstTransaction.setCurrency(Currency.EURO);
             firstTransaction.setDescription("");
 
@@ -123,7 +124,7 @@ public class DataSeeder implements CommandLineRunner {
             secondTransaction.setToIban("NL02INHO0987654321");
             secondTransaction.setAmount(BigDecimal.valueOf(25.00));
             secondTransaction.setUserInitiating("");
-            secondTransaction.setType(AccountType.CHECKING);
+            secondTransaction.setTransferType(TransferType.CHECKING_TO_CHECKING);
             secondTransaction.setCurrency(Currency.EURO);
             secondTransaction.setDescription("");
 

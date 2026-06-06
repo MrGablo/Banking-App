@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
@@ -74,7 +75,7 @@ class TransactionControllerTest {
         transaction.setToIban("NL01INHO0222222222");
         transaction.setAmount(new BigDecimal("100.00"));
 
-        when(transactionService.transferFromCheckingToChecking(any(TransferRequest.class), any(User.class)))
+        when(transactionService.transfer(any(TransferRequest.class), any(User.class), any(TransferType.class)))
                 .thenReturn(transaction);
 
         mockMvc.perform(post("/api/v1/transactions/transfer-checking")
@@ -108,7 +109,7 @@ class TransactionControllerTest {
         transaction.setToIban("NL01INHO0222222222");
         transaction.setAmount(new BigDecimal("50.00"));
 
-        when(transactionService.transferBetweenOwnAccounts(any(TransferRequest.class), any(User.class)))
+        when(transactionService.transfer(any(TransferRequest.class), any(User.class), any(TransferType.class)))
                 .thenReturn(transaction);
 
         mockMvc.perform(post("/api/v1/transactions/transfer")
