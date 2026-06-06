@@ -44,6 +44,9 @@ public class User {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts = new ArrayList<>();
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @PrePersist
     public void prePersist(){
         createdAt = LocalDateTime.now();

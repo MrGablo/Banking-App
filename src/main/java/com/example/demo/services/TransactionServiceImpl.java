@@ -1,7 +1,6 @@
 package com.example.demo.services;
 
-import com.example.demo.common.enums.AccountType;
-import com.example.demo.common.enums.Currency;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.common.exception.UnauthorizedException;
@@ -54,16 +53,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public boolean deleteTransaction(long id) {
-        if (transactionRepository.existsById(id)) {
-            transactionRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
     public Page<TransactionResponse> getAllTransactions(Pageable pageable) {
+        //requireEmployee();
         return transactionRepository.findAll(pageable)
                 .map(TransactionResponse::from);
     }
@@ -82,7 +73,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
-    public Transaction transferFromCheckingToChecking(TransferRequest request, User currentUser) {
+    public Transaction transfer(TransferRequest request, User currentUser, TransferType transferType) {
 
         validateUser(currentUser);
 
@@ -97,8 +88,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         BigDecimal totalTransferedAmount = calculateTotalTransfer(request);
 
-        BigDecimal newBalance = transferPolicy.validateCheckingToCheckingTransfer(currentUser, request, from,
-                to, totalTransferedAmount);
+        BigDecimal newBalance = transferPolicy.validateTransfer(currentUser, request, from,
+                to, totalTransferedAmount, transferType);
 
         from.setBalance(newBalance);
         to.setBalance(to.getBalance().add(request.amount()));
@@ -106,40 +97,12 @@ public class TransactionServiceImpl implements TransactionService {
         accountRepository.save(from);
         accountRepository.save(to);
 
-        Transaction transaction = transactionMapper.toEntity(request, currentUser);
+        Transaction transaction = transactionMapper.toEntity(request, currentUser, transferType);
 
         return transactionRepository.save(transaction);
 
     }
 
-    @Override
-    @Transactional
-    public Transaction transferBetweenOwnAccounts(TransferRequest request, User currentUser) {
-
-        validateUser(currentUser);
-
-        validateUserAuthorization(request, currentUser);
-
-        Account from = accountRepository.findByIban(request.fromIban())
-                .orElseThrow(() -> new NotFoundException("From account not found"));
-        Account to = accountRepository.findByIban(request.toIban())
-                .orElseThrow(() -> new NotFoundException("To account not found"));
-
-        BigDecimal totalTransferedAmount = calculateTotalTransfer(request);
-
-        BigDecimal newBalance = transferPolicy.validateOwnAccountTransfer(currentUser, request, from, to,
-                totalTransferedAmount);
-
-        from.setBalance(newBalance);
-        to.setBalance(to.getBalance().add(request.amount()));
-
-        accountRepository.save(from);
-        accountRepository.save(to);
-
-        Transaction transaction = transactionMapper.toEntity(request, currentUser);
-
-        return transactionRepository.save(transaction);
-    }
 
     private BigDecimal calculateTotalTransfer(TransferRequest request) {
         Account from = accountRepository.findByIban(request.fromIban())
@@ -169,6 +132,4 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 }
-
-
 

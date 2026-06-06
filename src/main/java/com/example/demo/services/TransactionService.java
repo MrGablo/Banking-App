@@ -1,5 +1,6 @@
 package com.example.demo.services;
 
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Transaction;
@@ -16,14 +17,11 @@ public interface TransactionService {
 
     Transaction addTransaction(Transaction transaction);
 
-    boolean deleteTransaction(long id);
-
     public Page<TransactionResponse> getAllTransactions(Pageable pageable);
 
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable);
 
-    Transaction transferFromCheckingToChecking(TransferRequest request, User currentUser);
-    Transaction transferBetweenOwnAccounts(TransferRequest request, User currentUser);
+    Transaction transfer(TransferRequest request, User currentUser, TransferType transferType);
 }
 
 

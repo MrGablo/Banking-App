@@ -36,16 +36,12 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
             return false;
         }
 
-        if (isAdmin(authentication)) {
-            return true;
-        }
-
         if (!"account".equalsIgnoreCase(targetType)) {
             return false;
         }
 
         String permissionName = permission == null ? "" : permission.toString().toLowerCase();
-        if (!"view".equals(permissionName) && !"update".equals(permissionName) && !"delete".equals(permissionName) && !"manage".equals(permissionName)) {
+        if (!"view".equals(permissionName) && !"update".equals(permissionName) && !"manage".equals(permissionName)) {
             return false;
         }
 
@@ -67,10 +63,5 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
                 .isPresent();
     }
 
-    private boolean isAdmin(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .map(a -> a.getAuthority())
-                .anyMatch("ROLE_ADMIN"::equals);
-    }
 }
 

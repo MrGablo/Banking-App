@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public Page<UserResponse> getAllCustomers(Pageable pageable) {
-        return userRepository.findByRole(UserRole.CUSTOMER, pageable)
+        return userRepository.findByRoleAndActive(UserRole.CUSTOMER, true, pageable)
                 .map(UserResponse::from);
     }
 
@@ -58,6 +58,9 @@ public class UserServiceImpl implements UserService{
 
         if (user.getRole() != UserRole.CUSTOMER) {
             throw new ConflictException("Only customers can be approved");
+        }
+        if (!user.isActive()) {
+            throw new ConflictException("Customer is inactive");
         }
         if (user.isApproved()) {
             throw new ConflictException("Customer is already approved");
@@ -77,6 +80,24 @@ public class UserServiceImpl implements UserService{
         accountRepository.save(savings);
 
         return UserResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateCustomer(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        if (user.getRole() != UserRole.CUSTOMER) {
+            throw new ConflictException("Only customers can be deactivated");
+        }
+        if (!user.isActive()) {
+            throw new ConflictException("Customer is already inactive");
+        }
+
+        user.setActive(false);
+        userRepository.save(user);
     }
 
     @Override
@@ -117,5 +138,4 @@ public class UserServiceImpl implements UserService{
                 ))
                 .toList();
     }
-
 }

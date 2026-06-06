@@ -7,7 +7,8 @@ public record UserDTO(
         String email,
         String phoneNumber,
         String role,
-        boolean approved
+        boolean approved,
+        boolean active
 ) {
 }
 
