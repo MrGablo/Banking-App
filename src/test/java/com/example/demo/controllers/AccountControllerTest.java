@@ -73,8 +73,7 @@ class AccountControllerTest {
                 customer, null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
     }
 
-    // --- closeAccount ---
-
+    // closeAccount
     @Test
     void closeAccountReturnsOk() throws Exception {
         doNothing().when(accountService).closeAccount("NL01INHO0123456789");
@@ -112,8 +111,7 @@ class AccountControllerTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- updateLimits ---
-
+    // updateLimits
     @Test
     void updateLimitsReturnsOk() throws Exception {
         UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("1000.00"));
@@ -138,8 +136,7 @@ class AccountControllerTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- getAllAccounts ---
-
+    //getAllAccounts
     @Test
     void getAllAccountsReturnsPage() throws Exception {
         AccountResponse response = new AccountResponse("NL01INHO0123456789", AccountType.CHECKING,
@@ -159,8 +156,7 @@ class AccountControllerTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- getAccountTransactions ---
-
+    // getAccountTransactions
     @Test
     void getAccountTransactionsReturnsPage() throws Exception {
         TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",

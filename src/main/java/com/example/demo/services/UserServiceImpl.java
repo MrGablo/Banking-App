@@ -37,7 +37,6 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public Page<UserResponse> getCustomersWithoutAccounts(Pageable pageable) {
-        //requireEmployee();
         return userRepository.findCustomersWithoutAccounts(pageable)
                 .map(UserResponse::from);
     }
@@ -45,7 +44,6 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public Page<UserResponse> getAllCustomers(Pageable pageable) {
-        //requireEmployee();
         return userRepository.findByRole(UserRole.CUSTOMER, pageable)
                 .map(UserResponse::from);
     }
@@ -54,7 +52,6 @@ public class UserServiceImpl implements UserService{
     @Override
     @Transactional
     public UserResponse approveCustomer(Long userId, ApproveCustomerRequest request) {
-        //requireEmployee();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
@@ -120,11 +117,5 @@ public class UserServiceImpl implements UserService{
                 ))
                 .toList();
     }
-
-//    private void requireEmployee() {
-//        if (authContext.getCurrentUserRole() != UserRole.EMPLOYEE) {
-//            throw new ForbiddenException("Employee role required");
-//        }
-//    }
 
 }

@@ -61,15 +61,9 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Page<AccountResponse> getAllAccounts(Pageable pageable) {
-        //requireEmployee();
         return accountRepository.findAll(pageable)
                 .map(AccountResponse::from);
     }
 
-//    private void requireEmployee() {
-//        if (authContext.getCurrentUserRole() != UserRole.EMPLOYEE) {
-//            throw new ForbiddenException("Employee role required");
-//        }
-//    }
 }
 

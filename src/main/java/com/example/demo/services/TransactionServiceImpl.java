@@ -64,7 +64,6 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Page<TransactionResponse> getAllTransactions(Pageable pageable) {
-        //requireEmployee();
         return transactionRepository.findAll(pageable)
                 .map(TransactionResponse::from);
     }
@@ -72,7 +71,6 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable) {
-        //requireEmployee();
 
         if (!accountRepository.existsByIban(iban)) {
             throw new NotFoundException("Account not found: " + iban);

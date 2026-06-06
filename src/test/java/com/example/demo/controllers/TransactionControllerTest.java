@@ -62,8 +62,7 @@ class TransactionControllerTest {
                 employeeUser, null, List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
     }
 
-    // --- transferChecking ---
-
+    //transferChecking
     @Test
     void transferCheckingReturnsCreated() throws Exception {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
@@ -97,8 +96,7 @@ class TransactionControllerTest {
                 .andExpect(status().isForbidden());
     }
 
-    // --- transfer (own accounts) ---
-
+    //transfer(own accounts)
     @Test
     void transferOwnAccountsReturnsCreated() throws Exception {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
@@ -121,8 +119,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.amount").value(50.00));
     }
 
-    // --- getAllTransactions ---
-
+    //getAllTransactions
     @Test
     void getAllTransactionsReturnsPage() throws Exception {
         TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",
