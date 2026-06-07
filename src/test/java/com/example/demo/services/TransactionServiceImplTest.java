@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.common.enums.AccountType;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.common.exception.UnauthorizedException;
@@ -115,22 +116,6 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void deleteTransactionReturnsTrueWhenExists() {
-        when(transactionRepository.existsById(1L)).thenReturn(true);
-
-        assertTrue(transactionService.deleteTransaction(1L));
-        verify(transactionRepository).deleteById(1L);
-    }
-
-    @Test
-    void deleteTransactionReturnsFalseWhenNotExists() {
-        when(transactionRepository.existsById(99L)).thenReturn(false);
-
-        assertFalse(transactionService.deleteTransaction(99L));
-        verify(transactionRepository, never()).deleteById(any());
-    }
-
-    @Test
     void getAllTransactionsReturnsPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Transaction> page = new PageImpl<>(List.of(transaction));
@@ -163,7 +148,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void transferFromCheckingToCheckingSuccess() {
+    void transferCheckingToCheckingSuccess() {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("100.00"), "Test");
 
@@ -172,26 +157,26 @@ class TransactionServiceImplTest {
         when(accountRepository.findByIban("NL01INHO0222222222")).thenReturn(Optional.of(toAccount));
         when(transactionRepository.sumByFromIbanAndDate(eq("NL01INHO0111111111"), any(), any()))
                 .thenReturn(Optional.of(BigDecimal.ZERO));
-        when(transferPolicy.validateCheckingToCheckingTransfer(eq(user), eq(request), eq(fromAccount), eq(toAccount), any()))
+        when(transferPolicy.validateTransfer(eq(user), eq(request), eq(fromAccount), eq(toAccount), any(), eq(TransferType.CHECKING_TO_CHECKING)))
                 .thenReturn(new BigDecimal("900.00"));
-        when(transactionMapper.toEntity(request, user)).thenReturn(transaction);
+        when(transactionMapper.toEntity(request, user, TransferType.CHECKING_TO_CHECKING)).thenReturn(transaction);
         when(transactionRepository.save(transaction)).thenReturn(transaction);
 
-        Transaction result = transactionService.transferFromCheckingToChecking(request, user);
+        Transaction result = transactionService.transfer(request, user, TransferType.CHECKING_TO_CHECKING);
 
         assertEquals(transaction, result);
         verify(accountRepository, times(2)).save(any(Account.class));
     }
 
     @Test
-    void transferFromCheckingToCheckingThrowsWhenUserNotFound() {
+    void transferThrowsWhenUserNotFound() {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("100.00"), "Test");
 
         when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
-                () -> transactionService.transferFromCheckingToChecking(request, user));
+                () -> transactionService.transfer(request, user, TransferType.CHECKING_TO_CHECKING));
     }
 
     @Test
@@ -204,18 +189,18 @@ class TransactionServiceImplTest {
         when(accountRepository.findByIban("NL01INHO0222222222")).thenReturn(Optional.of(toAccount));
         when(transactionRepository.sumByFromIbanAndDate(eq("NL01INHO0111111111"), any(), any()))
                 .thenReturn(Optional.of(BigDecimal.ZERO));
-        when(transferPolicy.validateOwnAccountTransfer(eq(user), eq(request), eq(fromAccount), eq(toAccount), any()))
+        when(transferPolicy.validateTransfer(eq(user), eq(request), eq(fromAccount), eq(toAccount), any(), eq(TransferType.OWN_ACCOUNTS)))
                 .thenReturn(new BigDecimal("900.00"));
-        when(transactionMapper.toEntity(request, user)).thenReturn(transaction);
+        when(transactionMapper.toEntity(request, user, TransferType.OWN_ACCOUNTS)).thenReturn(transaction);
         when(transactionRepository.save(transaction)).thenReturn(transaction);
 
-        Transaction result = transactionService.transferBetweenOwnAccounts(request, user);
+        Transaction result = transactionService.transfer(request, user, TransferType.OWN_ACCOUNTS);
 
         assertEquals(transaction, result);
     }
 
     @Test
-    void transferCheckingToCheckingRejectsUnauthorizedCustomer() {
+    void transferRejectsUnauthorizedCustomer() {
         User customer = new User();
         customer.setId(2L);
         customer.setEmail("customer@test.com");
@@ -228,6 +213,6 @@ class TransactionServiceImplTest {
         when(userRepository.findByEmail("customer@test.com")).thenReturn(Optional.of(customer));
 
         assertThrows(UnauthorizedException.class,
-                () -> transactionService.transferFromCheckingToChecking(request, customer));
+                () -> transactionService.transfer(request, customer, TransferType.CHECKING_TO_CHECKING));
     }
 }

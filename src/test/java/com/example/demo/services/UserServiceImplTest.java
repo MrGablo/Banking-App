@@ -57,6 +57,7 @@ class UserServiceImplTest {
         customer.setPhoneNumber("+31612345678");
         customer.setRole(UserRole.CUSTOMER);
         customer.setApproved(false);
+        customer.setActive(true);
     }
 
     // --- getCustomersWithoutAccounts ---
@@ -90,7 +91,7 @@ class UserServiceImplTest {
     void getAllCustomersReturnsPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> page = new PageImpl<>(List.of(customer));
-        when(userRepository.findByRole(UserRole.CUSTOMER, pageable)).thenReturn(page);
+        when(userRepository.findByRoleAndActive(UserRole.CUSTOMER, true, pageable)).thenReturn(page);
 
         Page<UserResponse> result = userService.getAllCustomers(pageable);
 
