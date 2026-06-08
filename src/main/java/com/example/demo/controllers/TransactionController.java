@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.pagination.PageResponse;
+import org.springframework.data.domain.Pageable;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.dtos.TransactionSearchRequest;
@@ -63,6 +64,25 @@ public class TransactionController {
 
         return PageResponse.of(
                 transactionService.getAllTransactions(pageRequest)
+        );
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE')")
+    public PageResponse<TransactionResponse> getTransactions(
+            @AuthenticationPrincipal User currentUser,
+            @ModelAttribute TransactionSearchRequest filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(
+                page,
+                Math.min(size, 100),
+                Sort.by("createdAt").descending()
+        );
+
+        return PageResponse.of(
+                transactionService.searchTransactions(currentUser, filter, pageable)
         );
     }
 }

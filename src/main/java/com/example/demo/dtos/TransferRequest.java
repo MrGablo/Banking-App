@@ -1,7 +1,6 @@
 package com.example.demo.dtos;
 
 import com.example.demo.common.enums.TransferType;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -14,11 +13,16 @@ public record TransferRequest(
         @NotNull
         @Positive BigDecimal amount,
 
-        @NotNull
+
          TransferType transferType,
 
         String description
 ) {
+    public TransferRequest {
+        if (transferType == null) {
+            transferType = TransferType.CHECKING_TO_CHECKING;
+        }
+    }
     public TransferRequest(String fromIban, String toIban, BigDecimal amount, String description) {
         this(fromIban, toIban, amount, TransferType.CHECKING_TO_CHECKING, description);
     }
