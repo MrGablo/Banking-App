@@ -32,6 +32,10 @@ public interface TransactionService {
     );
 
     Transaction transfer(TransferRequest request, User currentUser, TransferType transferType);
+
+    TransactionResponse atmWithdraw(User currentUser, TransferRequest request);
+
+    TransactionResponse atmDeposit(User currentUser, TransferRequest request);
 }
 
 

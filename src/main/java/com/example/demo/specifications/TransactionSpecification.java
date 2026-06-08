@@ -8,6 +8,9 @@ import java.util.List;
 
 public class TransactionSpecification {
 
+    private TransactionSpecification() {
+    }
+
     public static Specification<Transaction> withFilters(
             TransactionSearchRequest filter,
             List<String> ownedIbans
@@ -25,6 +28,10 @@ public class TransactionSpecification {
                                 root.get("toIban").in(ownedIbans)
                         )
                 );
+            }
+
+            if (filter == null) {
+                return predicates;
             }
 
             if (filter.startDate() != null) {
@@ -68,8 +75,18 @@ public class TransactionSpecification {
                 predicates = criteriaBuilder.and(
                         predicates,
                         criteriaBuilder.or(
-                                criteriaBuilder.like(criteriaBuilder.lower(root.get("fromIban")), ibanPattern),
-                                criteriaBuilder.like(criteriaBuilder.lower(root.get("toIban")), ibanPattern)
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(
+                                                criteriaBuilder.coalesce(root.get("fromIban"), "")
+                                        ),
+                                        ibanPattern
+                                ),
+                                criteriaBuilder.like(
+                                        criteriaBuilder.lower(
+                                                criteriaBuilder.coalesce(root.get("toIban"), "")
+                                        ),
+                                        ibanPattern
+                                )
                         )
                 );
             }

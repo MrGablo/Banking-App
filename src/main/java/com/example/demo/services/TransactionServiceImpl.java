@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.enums.UserRole;
+import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.common.exception.UnauthorizedException;
 import com.example.demo.domain.policy.TransferPolicy;
@@ -19,8 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import com.example.demo.entity.Account;
-import com.example.demo.entity.User;
 import com.example.demo.specifications.TransactionSpecification;
 import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -100,13 +98,17 @@ public class TransactionServiceImpl implements TransactionService {
             TransactionSearchRequest filter,
             Pageable pageable
     ) {
-        List<String> ownedIbans = accountRepository.findByOwnerId(currentUser.getId())
-                .stream()
-                .map(Account::getIban)
-                .toList();
+        List<String> ownedIbans = null;
 
-        if (ownedIbans.isEmpty()) {
-            return Page.empty(pageable);
+        if (currentUser.getRole() == UserRole.CUSTOMER) {
+            ownedIbans = accountRepository.findByOwnerId(currentUser.getId())
+                    .stream()
+                    .map(Account::getIban)
+                    .toList();
+
+            if (ownedIbans.isEmpty()) {
+                return Page.empty(pageable);
+            }
         }
 
         return transactionRepository
@@ -168,6 +170,65 @@ public class TransactionServiceImpl implements TransactionService {
                 && (from.getOwner() == null || !from.getOwner().getId().equals(currentUser.getId()))){
             throw new UnauthorizedException("Unauthorized to transfer from this account");
         }
+    }
+
+    @Override
+    @Transactional
+    public TransactionResponse atmWithdraw(User currentUser, TransferRequest request) {
+        Account account = accountRepository.findByIban(request.fromIban())
+                .orElseThrow(() -> new NotFoundException("Account not found"));
+
+        if (!account.isActive()) {
+            throw new ConflictException("Account is not active");
+        }
+
+        BigDecimal totalTransferredToday = calculateTotalTransfer(request);
+
+        BigDecimal newBalance = transferPolicy.validateAtmWithdrawal(
+                currentUser,
+                request,
+                account,
+                totalTransferredToday
+        );
+
+        account.setBalance(newBalance);
+        accountRepository.save(account);
+
+        Transaction transaction = transactionMapper.toEntity(
+                request,
+                currentUser,
+                TransferType.ATM_WITHDRAWAL
+        );
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        return TransactionResponse.from(savedTransaction);
+    }
+
+    @Override
+    @Transactional
+    public TransactionResponse atmDeposit(User currentUser, TransferRequest request) {
+        Account account = accountRepository.findByIban(request.toIban())
+                .orElseThrow(() -> new NotFoundException("Account not found"));
+
+        if (!account.isActive()) {
+            throw new ConflictException("Account is not active");
+        }
+
+        transferPolicy.validateAtmDeposit(currentUser, request, account);
+
+        account.setBalance(account.getBalance().add(request.amount()));
+        accountRepository.save(account);
+
+        Transaction transaction = transactionMapper.toEntity(
+                request,
+                currentUser,
+                TransferType.ATM_DEPOSIT
+        );
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        return TransactionResponse.from(savedTransaction);
     }
 }
 

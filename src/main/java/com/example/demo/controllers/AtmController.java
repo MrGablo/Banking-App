@@ -1,9 +1,9 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dtos.AtmRequest;
-import com.example.demo.entity.Transaction;
+import com.example.demo.dtos.TransactionResponse;
+import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.User;
-import com.example.demo.services.AtmService;
+import com.example.demo.services.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,29 +16,29 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "${app.cors.allowed-origin:http://localhost:5173}")
 public class AtmController {
 
-    private final AtmService atmService;
+    private final TransactionService transactionService;
 
-    public AtmController(AtmService atmService) {
-        this.atmService = atmService;
+    public AtmController(TransactionService transactionService) {
+        this.transactionService = transactionService;
     }
 
     @PostMapping("/withdraw")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Transaction> withdraw(
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<TransactionResponse> withdraw(
             @AuthenticationPrincipal User currentUser,
-            @Valid @RequestBody AtmRequest request
+            @Valid @RequestBody TransferRequest request
     ) {
-        Transaction transaction = atmService.withdraw(currentUser, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
+        TransactionResponse response = transactionService.atmWithdraw(currentUser, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/deposit")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Transaction> deposit(
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<TransactionResponse> deposit(
             @AuthenticationPrincipal User currentUser,
-            @Valid @RequestBody AtmRequest request
+            @Valid @RequestBody TransferRequest request
     ) {
-        Transaction transaction = atmService.deposit(currentUser, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
+        TransactionResponse response = transactionService.atmDeposit(currentUser, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

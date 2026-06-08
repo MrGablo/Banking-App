@@ -13,7 +13,15 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @NoArgsConstructor
-@Table(name = "transactions")
+@Table(
+        name = "transactions",
+        indexes = {
+                @Index(name = "idx_transactions_from_iban", columnList = "fromIban"),
+                @Index(name = "idx_transactions_to_iban", columnList = "toIban"),
+                @Index(name = "idx_transactions_created_at", columnList = "createdAt"),
+                @Index(name = "idx_transactions_amount", columnList = "amount")
+        }
+)
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
