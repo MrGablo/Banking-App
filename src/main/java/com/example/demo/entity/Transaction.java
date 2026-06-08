@@ -2,6 +2,7 @@ package com.example.demo.entity;
 
 import com.example.demo.common.enums.AccountType;
 import com.example.demo.common.enums.Currency;
+import com.example.demo.common.enums.TransferType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,14 +35,18 @@ public class Transaction {
     private Currency currency;
 
     @Enumerated(EnumType.STRING)
-    private AccountType type;
+    private TransferType transferType;
 
     private String description;
 
     @PrePersist
     public void prePersist(){
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
     }
 
     @PreUpdate

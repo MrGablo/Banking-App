@@ -3,9 +3,11 @@ package com.example.demo.controllers;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.ApproveCustomerRequest;
 import com.example.demo.dtos.CustomerIbanResponse;
+import com.example.demo.dtos.MessageResponse;
 import com.example.demo.dtos.UserResponse;
 import com.example.demo.services.UserService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,35 +23,51 @@ public class UserController {
 
     private final UserService userService;
 
+    @Value("${max.pagination.size}")
+    private int maxPaginationSize;
+
     public UserController(UserService userService) {
       this.userService = userService;
     }
 
     @GetMapping("")
-    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public PageResponse<UserResponse> getCustomersWithoutAccounts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return PageResponse.of(
-                userService.getCustomersWithoutAccounts(PageRequest.of(page, Math.min(size, 100)))
+                userService.getCustomersWithoutAccounts(PageRequest.of(page, Math.min(size, maxPaginationSize)))
         );
     }
 
     @GetMapping("/customer-ibans")
-    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE')")
     public ResponseEntity<List<CustomerIbanResponse>> searchCustomerIbans(
             @RequestParam String firstName,
             @RequestParam String lastName) {
         return ResponseEntity.ok(userService.searchCustomerIbans(firstName, lastName));
     }
 
+    @GetMapping("/customer-ibans/search-by-iban")
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE')")
+    public ResponseEntity<CustomerIbanResponse> searchCustomerByIban(@RequestParam String iban) {
+        return ResponseEntity.ok(userService.searchCustomerByIban(iban));
+    }
+
     @PostMapping("/{userId}/approve")
-    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<UserResponse> approveCustomer(
             @PathVariable Long userId,
             @Valid @RequestBody ApproveCustomerRequest request) {
         UserResponse response = userService.approveCustomer(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<MessageResponse> deactivateCustomer(@PathVariable Long userId) {
+        userService.deactivateCustomer(userId);
+        return ResponseEntity.ok(new MessageResponse("Customer successfully deactivated"));
     }
 
 }

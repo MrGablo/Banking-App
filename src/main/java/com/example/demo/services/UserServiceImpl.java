@@ -37,7 +37,6 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public Page<UserResponse> getCustomersWithoutAccounts(Pageable pageable) {
-        //requireEmployee();
         return userRepository.findCustomersWithoutAccounts(pageable)
                 .map(UserResponse::from);
     }
@@ -45,8 +44,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public Page<UserResponse> getAllCustomers(Pageable pageable) {
-        //requireEmployee();
-        return userRepository.findByRole(UserRole.CUSTOMER, pageable)
+        return userRepository.findByRoleAndActive(UserRole.CUSTOMER, true, pageable)
                 .map(UserResponse::from);
     }
 
@@ -54,13 +52,15 @@ public class UserServiceImpl implements UserService{
     @Override
     @Transactional
     public UserResponse approveCustomer(Long userId, ApproveCustomerRequest request) {
-        //requireEmployee();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
         if (user.getRole() != UserRole.CUSTOMER) {
             throw new ConflictException("Only customers can be approved");
+        }
+        if (!user.isActive()) {
+            throw new ConflictException("Customer is inactive");
         }
         if (user.isApproved()) {
             throw new ConflictException("Customer is already approved");
@@ -80,6 +80,24 @@ public class UserServiceImpl implements UserService{
         accountRepository.save(savings);
 
         return UserResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateCustomer(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        if (user.getRole() != UserRole.CUSTOMER) {
+            throw new ConflictException("Only customers can be deactivated");
+        }
+        if (!user.isActive()) {
+            throw new ConflictException("Customer is already inactive");
+        }
+
+        user.setActive(false);
+        userRepository.save(user);
     }
 
     @Override
@@ -104,7 +122,7 @@ public class UserServiceImpl implements UserService{
             return List.of();
         }
 
-        Map<Long, List<String>> ibansByOwnerId = accountRepository.findByOwnerIdIn(userIds)
+        Map<Long, List<String>> ibansByOwnerId = accountRepository.findByOwnerIdInAndType(userIds, AccountType.CHECKING)
                 .stream()
                 .collect(Collectors.groupingBy(
                         account -> account.getOwner().getId(),
@@ -121,10 +139,30 @@ public class UserServiceImpl implements UserService{
                 .toList();
     }
 
-//    private void requireEmployee() {
-//        if (authContext.getCurrentUserRole() != UserRole.EMPLOYEE) {
-//            throw new ForbiddenException("Employee role required");
-//        }
-//    }
+    @Override
+    public CustomerIbanResponse searchCustomerByIban(String iban) {
+        if (iban == null || iban.isBlank()) {
+            throw new IllegalArgumentException("IBAN is required");
+        }
 
+        Account account = accountRepository.findByIban(iban.trim())
+                .orElseThrow(() -> new NotFoundException("Customer account not found for IBAN"));
+
+        User owner = account.getOwner();
+        if (owner == null || owner.getRole() != UserRole.CUSTOMER || !owner.isApproved() || !owner.isActive()) {
+            throw new NotFoundException("Customer account not found for IBAN");
+        }
+
+        List<String> ibans = accountRepository.findByOwnerIdAndType(owner.getId(), AccountType.CHECKING)
+                .stream()
+                .map(Account::getIban)
+                .toList();
+
+        return new CustomerIbanResponse(
+                owner.getId(),
+                owner.getFirstName(),
+                owner.getLastName(),
+                ibans
+        );
+    }
 }

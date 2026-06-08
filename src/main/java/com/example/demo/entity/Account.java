@@ -40,7 +40,8 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private Currency currency;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User owner;
 
     @PrePersist

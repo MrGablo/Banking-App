@@ -46,9 +46,12 @@ components:
           example: "+31612345678"
         role:
           type: string
-          enum: [CUSTOMER, EMPLOYEE, ADMIN]
+          enum: [CUSTOMER, EMPLOYEE]
           example: "CUSTOMER"
         approved:
+          type: boolean
+          example: true
+        active:
           type: boolean
           example: true
 
@@ -391,7 +394,7 @@ paths:
 
   /transactions/transfer-checking:
     post:
-      summary: Transfer between own checking accounts
+      summary: Transfer from a checking account to another checking account
       tags:
         - Transactions
       security:
@@ -536,3 +539,24 @@ paths:
                 $ref: '#/components/schemas/User'
         '403':
           description: Forbidden
+
+  /users/{userId}:
+    delete:
+      summary: Deactivate customer
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Customer deactivated
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found

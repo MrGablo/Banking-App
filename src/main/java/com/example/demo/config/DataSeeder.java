@@ -1,6 +1,7 @@
 package com.example.demo.config;
 
 import com.example.demo.common.enums.Currency;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.entity.Account;
 import com.example.demo.common.enums.AccountType;
 import com.example.demo.entity.Transaction;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Profile("seed")
 @Component
@@ -46,18 +48,20 @@ public class DataSeeder implements CommandLineRunner {
             demoUser.setPasswordHash(passwordEncoder.encode("password123"));
             demoUser.setRole(UserRole.CUSTOMER);
             demoUser.setApproved(true);
+            demoUser.setActive(true);
             userRepository.save(demoUser);
 
-            User adminUser = new User();
-            adminUser.setFirstName("Kosi");
-            adminUser.setLastName("MaryJane");
-            adminUser.setEmail("kosi.maryJane@example.com");
-            adminUser.setBsn("123456782");
-            adminUser.setPhoneNumber("+31612345633");
-            adminUser.setPasswordHash(passwordEncoder.encode("password123"));
-            adminUser.setRole(UserRole.ADMIN);
-            adminUser.setApproved(true);
-            userRepository.save(adminUser);
+            User firstEmployeeUser = new User();
+            firstEmployeeUser.setFirstName("Kosi");
+            firstEmployeeUser.setLastName("MaryJane");
+            firstEmployeeUser.setEmail("kosi.maryJane@example.com");
+            firstEmployeeUser.setBsn("123456782");
+            firstEmployeeUser.setPhoneNumber("+31612345633");
+            firstEmployeeUser.setPasswordHash(passwordEncoder.encode("password123"));
+            firstEmployeeUser.setRole(UserRole.EMPLOYEE);
+            firstEmployeeUser.setApproved(true);
+            firstEmployeeUser.setActive(true);
+            userRepository.save(firstEmployeeUser);
 
             User employeeUser = new User();
             employeeUser.setFirstName("Henry");
@@ -68,9 +72,10 @@ public class DataSeeder implements CommandLineRunner {
             employeeUser.setPasswordHash(passwordEncoder.encode("password123"));
             employeeUser.setRole(UserRole.EMPLOYEE);
             employeeUser.setApproved(true);
+            employeeUser.setActive(true);
             userRepository.save(employeeUser);
 
-            // Admin-owned checking and savings accounts
+            // Employee-owned checking and savings accounts
             Account firstAccount = new Account();
             firstAccount.setIban("NL01INHO0123456789");
             firstAccount.setType(AccountType.CHECKING);
@@ -79,7 +84,7 @@ public class DataSeeder implements CommandLineRunner {
             firstAccount.setDailyLimit(BigDecimal.valueOf(500.00));
             firstAccount.setActive(true);
             firstAccount.setCurrency(Currency.EURO);
-            firstAccount.setOwner(adminUser);
+            firstAccount.setOwner(firstEmployeeUser);
 
             Account secondAccount = new Account();
             secondAccount.setIban("NL02INHO0987654321");
@@ -89,7 +94,7 @@ public class DataSeeder implements CommandLineRunner {
             secondAccount.setDailyLimit(BigDecimal.valueOf(500.00));
             secondAccount.setActive(true);
             secondAccount.setCurrency(Currency.EURO);
-            secondAccount.setOwner(adminUser);
+            secondAccount.setOwner(firstEmployeeUser);
 
             // Demo (customer) account
             Account thirdAccount = new Account();
@@ -111,7 +116,7 @@ public class DataSeeder implements CommandLineRunner {
             firstTransaction.setToIban("NL02INHO0987654321");
             firstTransaction.setAmount(BigDecimal.valueOf(75.00));
             firstTransaction.setUserInitiating("");
-            firstTransaction.setType(AccountType.CHECKING);
+            firstTransaction.setTransferType(TransferType.CHECKING_TO_CHECKING);
             firstTransaction.setCurrency(Currency.EURO);
             firstTransaction.setDescription("");
 
@@ -120,12 +125,29 @@ public class DataSeeder implements CommandLineRunner {
             secondTransaction.setToIban("NL02INHO0987654321");
             secondTransaction.setAmount(BigDecimal.valueOf(25.00));
             secondTransaction.setUserInitiating("");
-            secondTransaction.setType(AccountType.CHECKING);
+            secondTransaction.setTransferType(TransferType.CHECKING_TO_CHECKING);
             secondTransaction.setCurrency(Currency.EURO);
             secondTransaction.setDescription("");
 
             transactionRepository.save(firstTransaction);
             transactionRepository.save(secondTransaction);
+
+
+            
+            for (int i = 1; i <= 18; i++) {
+                Transaction customerTransaction = new Transaction();
+                boolean outgoing = i % 2 == 0;
+                customerTransaction.setFromIban(outgoing ? thirdAccount.getIban() : firstAccount.getIban());
+                customerTransaction.setToIban(outgoing ? firstAccount.getIban() : thirdAccount.getIban());
+                customerTransaction.setAmount(BigDecimal.valueOf(10L + i));
+                customerTransaction.setUserInitiating(outgoing ? demoUser.getFirstName() : firstEmployeeUser.getFirstName());
+                customerTransaction.setTransferType(TransferType.CHECKING_TO_CHECKING);
+                customerTransaction.setCurrency(Currency.EURO);
+                customerTransaction.setDescription("Seeded pagination transaction " + i);
+                customerTransaction.setCreatedAt(LocalDateTime.now().minusDays(i));
+                customerTransaction.setUpdatedAt(LocalDateTime.now().minusDays(i));
+                transactionRepository.save(customerTransaction);
+            }
         }
     }
 }
