@@ -78,7 +78,7 @@ class TransactionControllerTest {
 
     //transferChecking
     @Test
-    void transferCheckingReturnsCreated() throws Exception {
+    void transferChecking_returnsCreated() throws Exception {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("100.00"), "Test transfer");
 
@@ -100,7 +100,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void transferCheckingForbiddenWithoutAuth() throws Exception {
+    void transferChecking_forbidsAnonymous() throws Exception {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("100.00"), "Test");
 
@@ -112,7 +112,7 @@ class TransactionControllerTest {
 
     //transfer(own accounts)
     @Test
-    void transferOwnAccountsReturnsCreated() throws Exception {
+    void transfer_returnsCreated() throws Exception {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("50.00"), "Own transfer");
 
@@ -135,7 +135,7 @@ class TransactionControllerTest {
 
     //getAllTransactions
     @Test
-    void getAllTransactionsReturnsPage() throws Exception {
+    void getAllTransactions_returnsPage() throws Exception {
         TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",
                 "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John", "Invoice");
 
@@ -149,7 +149,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getAllTransactionsReturnsCurrentCustomerPage() throws Exception {
+    void getAllTransactions_returnsCustomerPage() throws Exception {
         TransactionResponse txResponse = new TransactionResponse(2L, "NL03INHO0111111111",
                 "NL04INHO0222222222", new BigDecimal("25.00"), LocalDateTime.now(), "Jane", "Rent");
 
@@ -163,7 +163,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getAllTransactionsForbiddenWithoutAuth() throws Exception {
+    void getAllTransactions_forbidsAnonymous() throws Exception {
         mockMvc.perform(get("/api/v1/transactions"))
                 .andExpect(status().isForbidden());
     }

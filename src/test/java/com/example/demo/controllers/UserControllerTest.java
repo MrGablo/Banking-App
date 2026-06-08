@@ -47,7 +47,7 @@ class UserControllerTest {
     }
 
     @Test
-    void searchCustomerByIbanReturnsCustomerIbans() throws Exception {
+    void searchCustomerByIban_returnsIbans() throws Exception {
         CustomerIbanResponse response = new CustomerIbanResponse(
                 2L,
                 "Jane",
