@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.TransactionResponse;
@@ -48,10 +49,17 @@ public class TransactionController {
     @GetMapping
     @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
     public PageResponse<TransactionResponse> getAllTransactions(
+            @AuthenticationPrincipal User currentUser,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        PageRequest pageRequest = PageRequest.of(page, Math.min(size, maxPaginationSize));
+
+        if (currentUser.getRole() == UserRole.CUSTOMER) {
+            return PageResponse.of(transactionService.getTransactionsForUser(currentUser, pageRequest));
+        }
+
         return PageResponse.of(
-                transactionService.getAllTransactions(PageRequest.of(page, Math.min(size, maxPaginationSize)))
+                transactionService.getAllTransactions(pageRequest)
         );
     }
 }

@@ -47,7 +47,9 @@ class TransactionControllerTest {
     private TransactionService transactionService;
 
     private User employeeUser;
+    private User customerUser;
     private UsernamePasswordAuthenticationToken employeeAuth;
+    private UsernamePasswordAuthenticationToken customerAuth;
 
     @BeforeEach
     void setUp() {
@@ -61,6 +63,17 @@ class TransactionControllerTest {
 
         employeeAuth = new UsernamePasswordAuthenticationToken(
                 employeeUser, null, List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
+
+        customerUser = new User();
+        customerUser.setId(2L);
+        customerUser.setFirstName("Jane");
+        customerUser.setLastName("Doe");
+        customerUser.setEmail("jane@test.com");
+        customerUser.setRole(UserRole.CUSTOMER);
+        customerUser.setApproved(true);
+
+        customerAuth = new UsernamePasswordAuthenticationToken(
+                customerUser, null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
     }
 
     //transferChecking
@@ -124,14 +137,29 @@ class TransactionControllerTest {
     @Test
     void getAllTransactionsReturnsPage() throws Exception {
         TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",
-                "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John");
+                "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John", "Invoice");
 
         when(transactionService.getAllTransactions(any())).thenReturn(new PageImpl<>(List.of(txResponse)));
 
         mockMvc.perform(get("/api/v1/transactions")
                         .with(authentication(employeeAuth)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].fromIban").value("NL01INHO0111111111"));
+                .andExpect(jsonPath("$.content[0].fromIban").value("NL01INHO0111111111"))
+                .andExpect(jsonPath("$.content[0].description").value("Invoice"));
+    }
+
+    @Test
+    void getAllTransactionsReturnsCurrentCustomerPage() throws Exception {
+        TransactionResponse txResponse = new TransactionResponse(2L, "NL03INHO0111111111",
+                "NL04INHO0222222222", new BigDecimal("25.00"), LocalDateTime.now(), "Jane", "Rent");
+
+        when(transactionService.getTransactionsForUser(any(User.class), any())).thenReturn(new PageImpl<>(List.of(txResponse)));
+
+        mockMvc.perform(get("/api/v1/transactions?page=0&size=8")
+                        .with(authentication(customerAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].fromIban").value("NL03INHO0111111111"))
+                .andExpect(jsonPath("$.content[0].description").value("Rent"));
     }
 
     @Test

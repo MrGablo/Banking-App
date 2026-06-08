@@ -19,6 +19,8 @@ public interface TransactionService {
 
     public Page<TransactionResponse> getAllTransactions(Pageable pageable);
 
+    public Page<TransactionResponse> getTransactionsForUser(User currentUser, Pageable pageable);
+
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable);
 
     Transaction transfer(TransferRequest request, User currentUser, TransferType transferType);

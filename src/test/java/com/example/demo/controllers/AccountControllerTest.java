@@ -174,7 +174,7 @@ class AccountControllerTest {
     @Test
     void getAccountTransactionsReturnsPage() throws Exception {
         TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",
-                "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John");
+                "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John", "Lunch");
 
         when(transactionService.getTransactionsForAccount(eq("NL01INHO0111111111"), any()))
                 .thenReturn(new PageImpl<>(List.of(txResponse)));

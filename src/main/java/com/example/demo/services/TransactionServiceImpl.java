@@ -15,6 +15,7 @@ import com.example.demo.repositories.AccountRepository;
 import com.example.demo.repositories.TransactionRepository;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -55,7 +57,22 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Page<TransactionResponse> getAllTransactions(Pageable pageable) {
         //requireEmployee();
-        return transactionRepository.findAll(pageable)
+        return transactionRepository.findAllByOrderByCreatedAtDesc(pageable)
+                .map(TransactionResponse::from);
+    }
+
+    @Override
+    public Page<TransactionResponse> getTransactionsForUser(User currentUser, Pageable pageable) {
+        List<String> ibans = accountRepository.findByOwnerId(currentUser.getId())
+                .stream()
+                .map(Account::getIban)
+                .toList();
+
+        if (ibans.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        return transactionRepository.findByFromIbanInOrToIbanInOrderByCreatedAtDesc(ibans, ibans, pageable)
                 .map(TransactionResponse::from);
     }
 

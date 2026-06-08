@@ -19,4 +19,6 @@ public interface UserService {
     public void deactivateCustomer(Long userId);
 
     List<CustomerIbanResponse> searchCustomerIbans(String firstName, String lastName);
+
+    CustomerIbanResponse searchCustomerByIban(String iban);
 }

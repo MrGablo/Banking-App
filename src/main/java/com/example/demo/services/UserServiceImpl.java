@@ -138,4 +138,31 @@ public class UserServiceImpl implements UserService{
                 ))
                 .toList();
     }
+
+    @Override
+    public CustomerIbanResponse searchCustomerByIban(String iban) {
+        if (iban == null || iban.isBlank()) {
+            throw new IllegalArgumentException("IBAN is required");
+        }
+
+        Account account = accountRepository.findByIban(iban.trim())
+                .orElseThrow(() -> new NotFoundException("Customer account not found for IBAN"));
+
+        User owner = account.getOwner();
+        if (owner == null || owner.getRole() != UserRole.CUSTOMER || !owner.isApproved() || !owner.isActive()) {
+            throw new NotFoundException("Customer account not found for IBAN");
+        }
+
+        List<String> ibans = accountRepository.findByOwnerId(owner.getId())
+                .stream()
+                .map(Account::getIban)
+                .toList();
+
+        return new CustomerIbanResponse(
+                owner.getId(),
+                owner.getFirstName(),
+                owner.getLastName(),
+                ibans
+        );
+    }
 }

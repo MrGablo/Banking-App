@@ -48,6 +48,12 @@ public class UserController {
         return ResponseEntity.ok(userService.searchCustomerIbans(firstName, lastName));
     }
 
+    @GetMapping("/customer-ibans/search-by-iban")
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE')")
+    public ResponseEntity<CustomerIbanResponse> searchCustomerByIban(@RequestParam String iban) {
+        return ResponseEntity.ok(userService.searchCustomerByIban(iban));
+    }
+
     @PostMapping("/{userId}/approve")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<UserResponse> approveCustomer(
