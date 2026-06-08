@@ -67,9 +67,9 @@ public class TransactionController {
         );
     }
 
-    @GetMapping
+    @GetMapping("/search")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE')")
-    public PageResponse<TransactionResponse> getTransactions(
+    public PageResponse<TransactionResponse> searchTransactions(
             @AuthenticationPrincipal User currentUser,
             @ModelAttribute TransactionSearchRequest filter,
             @RequestParam(defaultValue = "0") int page,
