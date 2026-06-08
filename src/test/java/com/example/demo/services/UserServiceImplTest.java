@@ -5,6 +5,7 @@ import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.ApproveCustomerRequest;
+import com.example.demo.dtos.CustomerIbanResponse;
 import com.example.demo.dtos.UserResponse;
 import com.example.demo.entity.Account;
 import com.example.demo.entity.User;
@@ -146,5 +147,43 @@ class UserServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
 
         assertThrows(ConflictException.class, () -> userService.approveCustomer(1L, request));
+    }
+
+    @Test
+    void searchCustomerIbansReturnsOnlyCheckingAccounts() {
+        customer.setApproved(true);
+        Account checking = account("NL01INHO0123456789", AccountType.CHECKING);
+
+        when(userRepository.searchUsersWithAccounts(eq("Jane"), eq("Doe"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(customer)));
+        when(accountRepository.findByOwnerIdInAndType(List.of(1L), AccountType.CHECKING))
+                .thenReturn(List.of(checking));
+
+        List<CustomerIbanResponse> results = userService.searchCustomerIbans("Jane", "Doe");
+
+        assertEquals(1, results.size());
+        assertEquals(List.of("NL01INHO0123456789"), results.get(0).ibans());
+    }
+
+    @Test
+    void searchCustomerByIbanReturnsOnlyOwnerCheckingAccounts() {
+        customer.setApproved(true);
+        Account searchedSavings = account("NL02INHO0987654321", AccountType.SAVINGS);
+        Account checking = account("NL01INHO0123456789", AccountType.CHECKING);
+
+        when(accountRepository.findByIban("NL02INHO0987654321")).thenReturn(Optional.of(searchedSavings));
+        when(accountRepository.findByOwnerIdAndType(1L, AccountType.CHECKING)).thenReturn(List.of(checking));
+
+        CustomerIbanResponse result = userService.searchCustomerByIban("NL02INHO0987654321");
+
+        assertEquals(List.of("NL01INHO0123456789"), result.ibans());
+    }
+
+    private Account account(String iban, AccountType type) {
+        Account account = new Account();
+        account.setIban(iban);
+        account.setType(type);
+        account.setOwner(customer);
+        return account;
     }
 }

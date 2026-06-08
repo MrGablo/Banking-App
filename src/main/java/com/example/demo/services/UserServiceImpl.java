@@ -122,7 +122,7 @@ public class UserServiceImpl implements UserService{
             return List.of();
         }
 
-        Map<Long, List<String>> ibansByOwnerId = accountRepository.findByOwnerIdIn(userIds)
+        Map<Long, List<String>> ibansByOwnerId = accountRepository.findByOwnerIdInAndType(userIds, AccountType.CHECKING)
                 .stream()
                 .collect(Collectors.groupingBy(
                         account -> account.getOwner().getId(),
@@ -153,7 +153,7 @@ public class UserServiceImpl implements UserService{
             throw new NotFoundException("Customer account not found for IBAN");
         }
 
-        List<String> ibans = accountRepository.findByOwnerId(owner.getId())
+        List<String> ibans = accountRepository.findByOwnerIdAndType(owner.getId(), AccountType.CHECKING)
                 .stream()
                 .map(Account::getIban)
                 .toList();

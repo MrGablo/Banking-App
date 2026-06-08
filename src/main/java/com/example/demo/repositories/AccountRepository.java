@@ -1,5 +1,6 @@
 package com.example.demo.repositories;
 
+import com.example.demo.common.enums.AccountType;
 import com.example.demo.entity.Account;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,4 +28,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findByOwnerId(Long ownerId);
 
     List<Account> findByOwnerIdIn(List<Long> ownerIds);
+
+    List<Account> findByOwnerIdAndType(Long ownerId, AccountType type);
+
+    List<Account> findByOwnerIdInAndType(List<Long> ownerIds, AccountType type);
 }
