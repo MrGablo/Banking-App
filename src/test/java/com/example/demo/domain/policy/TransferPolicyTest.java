@@ -208,6 +208,85 @@ class TransferPolicyTest {
         ));
     }
 
+    @Test
+    void validateAtmWithdrawal_allowsCustomerOwner() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                "NL01INHO0111111111",
+                null,
+                new BigDecimal("40.00"),
+                TransferType.ATM_WITHDRAWAL,
+                "ATM withdrawal"
+        );
+
+        BigDecimal newBalance = transferPolicy.validateAtmWithdrawal(user, request, account, BigDecimal.ZERO);
+
+        assertEquals(new BigDecimal("60.00"), newBalance);
+    }
+
+    @Test
+    void validateAtmWithdrawal_rejectsEmployee() {
+        User user = approvedUser(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                "NL01INHO0111111111",
+                null,
+                new BigDecimal("40.00"),
+                TransferType.ATM_WITHDRAWAL,
+                "ATM withdrawal"
+        );
+
+        assertThrows(ForbiddenException.class,
+                () -> transferPolicy.validateAtmWithdrawal(user, request, account, BigDecimal.ZERO));
+    }
+
+    @Test
+    void validateAtmWithdrawal_rejectsMissingFromIban() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                null,
+                null,
+                new BigDecimal("40.00"),
+                TransferType.ATM_WITHDRAWAL,
+                "ATM withdrawal"
+        );
+
+        assertThrows(ConflictException.class,
+                () -> transferPolicy.validateAtmWithdrawal(user, request, account, BigDecimal.ZERO));
+    }
+
+    @Test
+    void validateAtmDeposit_allowsCustomerOwner() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                null,
+                "NL01INHO0111111111",
+                new BigDecimal("40.00"),
+                TransferType.ATM_DEPOSIT,
+                "ATM deposit"
+        );
+
+        assertDoesNotThrow(() -> transferPolicy.validateAtmDeposit(user, request, account));
+    }
+
+    @Test
+    void validateAtmDeposit_rejectsOtherCustomerAccount() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, approvedCustomer(2L), "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                null,
+                "NL01INHO0111111111",
+                new BigDecimal("40.00"),
+                TransferType.ATM_DEPOSIT,
+                "ATM deposit"
+        );
+
+        assertThrows(ForbiddenException.class, () -> transferPolicy.validateAtmDeposit(user, request, account));
+    }
+
     private User approvedUser(Long id) {
         return user(id, true);
     }

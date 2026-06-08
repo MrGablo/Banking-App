@@ -21,13 +21,14 @@ class TransactionMapperTest {
                 "NL01INHO0111111111", "NL01INHO0222222222", new BigDecimal("100.00"), "Rent");
         User user = new User();
         user.setFirstName("Jane");
+        user.setLastName("Doe");
 
         Transaction transaction = transactionMapper.toEntity(request, user, TransferType.OWN_ACCOUNTS);
 
         assertEquals("NL01INHO0111111111", transaction.getFromIban());
         assertEquals("NL01INHO0222222222", transaction.getToIban());
         assertEquals(new BigDecimal("100.00"), transaction.getAmount());
-        assertEquals("Jane", transaction.getUserInitiating());
+        assertEquals("Jane Doe", transaction.getUserInitiating());
         assertEquals(TransferType.OWN_ACCOUNTS, transaction.getTransferType());
         assertEquals(Currency.EURO, transaction.getCurrency());
         assertEquals("Rent", transaction.getDescription());

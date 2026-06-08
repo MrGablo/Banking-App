@@ -1,6 +1,7 @@
 package com.example.demo.dtos;
 
 import com.example.demo.common.enums.AccountType;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.entity.Account;
 import com.example.demo.entity.Transaction;
@@ -61,9 +62,8 @@ class DtoTest {
 
         Set<ConstraintViolation<TransferRequest>> violations = validator.validate(request);
 
-        assertTrue(hasViolationFor(violations, "fromIban"));
-        assertTrue(hasViolationFor(violations, "toIban"));
         assertTrue(hasViolationFor(violations, "amount"));
+        assertEquals(TransferType.CHECKING_TO_CHECKING, request.transferType());
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.common.enums.AccountType;
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.AccountResponse;
@@ -140,5 +141,43 @@ class AccountServiceImplTest {
 
         assertEquals(1, result.getTotalElements());
         assertEquals("NL01INHO0123456789", result.getContent().get(0).iban());
+    }
+
+    @Test
+    void getAccountsForOwner_returnsResponses() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Account> page = new PageImpl<>(List.of(account));
+        when(accountRepository.findByOwnerId(1L, pageable)).thenReturn(page);
+
+        Page<AccountResponse> result = accountService.getAccountsForOwner(1L, pageable);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(1L, result.getContent().get(0).ownerId());
+    }
+
+    @Test
+    void getVisibleAccounts_returnsCustomerAccounts() {
+        owner.setRole(UserRole.CUSTOMER);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(accountRepository.findByOwnerId(1L, pageable)).thenReturn(new PageImpl<>(List.of(account)));
+
+        Page<AccountResponse> result = accountService.getVisibleAccounts(owner, pageable);
+
+        assertEquals(1, result.getTotalElements());
+        verify(accountRepository).findByOwnerId(1L, pageable);
+        verify(accountRepository, never()).findAll(pageable);
+    }
+
+    @Test
+    void getVisibleAccounts_returnsAllAccountsForEmployee() {
+        owner.setRole(UserRole.EMPLOYEE);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(accountRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(account)));
+
+        Page<AccountResponse> result = accountService.getVisibleAccounts(owner, pageable);
+
+        assertEquals(1, result.getTotalElements());
+        verify(accountRepository).findAll(pageable);
+        verify(accountRepository, never()).findByOwnerId(anyLong(), any());
     }
 }

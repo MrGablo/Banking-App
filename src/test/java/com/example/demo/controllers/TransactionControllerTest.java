@@ -139,7 +139,7 @@ class TransactionControllerTest {
         TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",
                 "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John", "Invoice");
 
-        when(transactionService.getAllTransactions(any())).thenReturn(new PageImpl<>(List.of(txResponse)));
+        when(transactionService.getVisibleTransactions(any(User.class), any())).thenReturn(new PageImpl<>(List.of(txResponse)));
 
         mockMvc.perform(get("/api/v1/transactions")
                         .with(authentication(employeeAuth)))
@@ -153,7 +153,7 @@ class TransactionControllerTest {
         TransactionResponse txResponse = new TransactionResponse(2L, "NL03INHO0111111111",
                 "NL04INHO0222222222", new BigDecimal("25.00"), LocalDateTime.now(), "Jane", "Rent");
 
-        when(transactionService.getTransactionsForUser(any(User.class), any())).thenReturn(new PageImpl<>(List.of(txResponse)));
+        when(transactionService.getVisibleTransactions(any(User.class), any())).thenReturn(new PageImpl<>(List.of(txResponse)));
 
         mockMvc.perform(get("/api/v1/transactions?page=0&size=8")
                         .with(authentication(customerAuth)))
