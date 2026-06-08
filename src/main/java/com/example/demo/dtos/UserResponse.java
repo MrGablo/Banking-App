@@ -11,7 +11,8 @@ public record UserResponse(
         String bsn,
         String phoneNumber,
         UserRole role,
-        boolean approved
+        boolean approved,
+        boolean active
 ) {
     public static UserResponse from(User user) {
         return new UserResponse(
@@ -22,7 +23,8 @@ public record UserResponse(
                 user.getBsn(),
                 user.getPhoneNumber(),
                 user.getRole(),
-                user.isApproved()
+                user.isApproved(),
+                user.isActive()
         );
     }
 }

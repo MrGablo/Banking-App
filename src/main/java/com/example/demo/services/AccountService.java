@@ -14,12 +14,12 @@ public interface AccountService {
 
     Account addAccount(Account account);
 
-    boolean deleteAccount(String iban);
-
     public void closeAccount(String iban);
 
     public void updateLimits(String iban, UpdateLimitsRequest request);
 
     public Page<AccountResponse> getAllAccounts(Pageable pageable);
+
+    public Page<AccountResponse> getAccountsForOwner(Long ownerId, Pageable pageable);
 }
 

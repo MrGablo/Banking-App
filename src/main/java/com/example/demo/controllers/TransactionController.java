@@ -1,13 +1,15 @@
 package com.example.demo.controllers;
 
+import com.example.demo.common.enums.UserRole;
+import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
 import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
 import com.example.demo.services.TransactionService;
-import com.example.demo.services.TransferService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,38 +21,45 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/transactions")
 @CrossOrigin(origins = "${app.cors.allowed-origin:http://localhost:5173}")
 public class TransactionController {
-    private final TransferService transferService;
     private final TransactionService transactionService;
 
-    public TransactionController(TransferService transferService, TransactionService transactionService) {
-        this.transferService = transferService;
+    @Value("${max.pagination.size}")
+    private int maxPaginationSize;
+
+    public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
     }
 
     @PostMapping("/transfer-checking")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Transaction> transferChecking(
-            @AuthenticationPrincipal User currentUser,
-            @Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transferService.transferFromCheckingToChecking(currentUser, request);
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'CUSTOMER', 'ADMIN')")
+    public ResponseEntity<Transaction> transferChecking(@AuthenticationPrincipal User currentUser,
+                                                        @Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transactionService.transfer(request, currentUser, TransferType.CHECKING_TO_CHECKING);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
     @PostMapping("/transfer")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Transaction> transfer(
-            @AuthenticationPrincipal User currentUser,
-            @Valid @RequestBody TransferRequest request) {
-        Transaction transaction = transferService.transferBetweenOwnAccounts(currentUser, request);
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
+    public ResponseEntity<Transaction> transfer( @AuthenticationPrincipal User currentUser,
+                                                 @Valid @RequestBody TransferRequest request) {
+        Transaction transaction = transactionService.transfer(request, currentUser, TransferType.OWN_ACCOUNTS);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER','EMPLOYEE','ADMIN')")
     public PageResponse<TransactionResponse> getAllTransactions(
+            @AuthenticationPrincipal User currentUser,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        PageRequest pageRequest = PageRequest.of(page, Math.min(size, maxPaginationSize));
+
+        if (currentUser.getRole() == UserRole.CUSTOMER) {
+            return PageResponse.of(transactionService.getTransactionsForUser(currentUser, pageRequest));
+        }
+
         return PageResponse.of(
-                transactionService.getAllTransactions(PageRequest.of(page, Math.min(size, 100)))
+                transactionService.getAllTransactions(pageRequest)
         );
     }
 }

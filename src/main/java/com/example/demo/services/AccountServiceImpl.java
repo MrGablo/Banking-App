@@ -33,18 +33,8 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public boolean deleteAccount(String iban) {
-        if (accountRepository.existsByIban(iban)) {
-            accountRepository.deleteByIban(iban);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
     @Transactional
     public void closeAccount(String iban) {
-        //requireEmployee();
 
         Account account = accountRepository.findByIban(iban)
                 .orElseThrow(() -> new NotFoundException("Account not found: " + iban));
@@ -60,7 +50,6 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void updateLimits(String iban, UpdateLimitsRequest request) {
-        //requireEmployee();
 
         Account account = accountRepository.findByIban(iban)
                 .orElseThrow(() -> new NotFoundException("Account not found: " + iban));
@@ -72,15 +61,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Page<AccountResponse> getAllAccounts(Pageable pageable) {
-        //requireEmployee();
         return accountRepository.findAll(pageable)
                 .map(AccountResponse::from);
     }
 
-//    private void requireEmployee() {
-//        if (authContext.getCurrentUserRole() != UserRole.EMPLOYEE) {
-//            throw new ForbiddenException("Employee role required");
-//        }
-//    }
+    @Override
+    public Page<AccountResponse> getAccountsForOwner(Long ownerId, Pageable pageable) {
+        return accountRepository.findByOwnerId(ownerId, pageable)
+                .map(AccountResponse::from);
+    }
+
 }
 

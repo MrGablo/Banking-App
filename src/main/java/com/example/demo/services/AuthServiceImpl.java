@@ -51,6 +51,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
+        if (!user.isActive()) {
+            throw new UnauthorizedException("Invalid credentials");
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new UnauthorizedException("Invalid credentials");
         }
@@ -66,6 +70,9 @@ public class AuthServiceImpl implements AuthService {
     public UserDTO getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
+        if (!user.isActive()) {
+            throw new NotFoundException("User not found");
+        }
         return userMapper.toDTO(user);
     }
 }

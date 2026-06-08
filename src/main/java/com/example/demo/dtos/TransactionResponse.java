@@ -11,7 +11,8 @@ public record TransactionResponse(
         String toIban,
         BigDecimal amount,
         LocalDateTime timestamp,
-        String userInitiating
+        String userInitiating,
+        String description
 ) {
     public static TransactionResponse from(Transaction transaction) {
         return new TransactionResponse(
@@ -20,7 +21,8 @@ public record TransactionResponse(
                 transaction.getToIban(),
                 transaction.getAmount(),
                 transaction.getCreatedAt(),
-                transaction.getUserInitiating()
+                transaction.getUserInitiating(),
+                transaction.getDescription()
         );
     }
 }
