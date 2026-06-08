@@ -92,9 +92,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Transactional
     public Transaction transfer(TransferRequest request, User currentUser, TransferType transferType) {
 
-        validateUser(currentUser);
-
-        validateUserAuthorization(request, currentUser);
+        User authenticatedUser = validateUser(currentUser);
 
         Account from = accountRepository.findByIban(request.fromIban())
                 .orElseThrow(() -> new NotFoundException("From account not found"));
@@ -102,10 +100,11 @@ public class TransactionServiceImpl implements TransactionService {
         Account to = accountRepository.findByIban(request.toIban())
                 .orElseThrow(() -> new NotFoundException("To account not found"));
 
+        validateUserAuthorization(authenticatedUser, from);
 
         BigDecimal totalTransferedAmount = calculateTotalTransfer(request);
 
-        BigDecimal newBalance = transferPolicy.validateTransfer(currentUser, request, from,
+        BigDecimal newBalance = transferPolicy.validateTransfer(authenticatedUser, request, from,
                 to, totalTransferedAmount, transferType);
 
         from.setBalance(newBalance);
@@ -114,7 +113,7 @@ public class TransactionServiceImpl implements TransactionService {
         accountRepository.save(from);
         accountRepository.save(to);
 
-        Transaction transaction = transactionMapper.toEntity(request, currentUser, transferType);
+        Transaction transaction = transactionMapper.toEntity(request, authenticatedUser, transferType);
 
         return transactionRepository.save(transaction);
 
@@ -133,18 +132,14 @@ public class TransactionServiceImpl implements TransactionService {
         return totalTransferedAmount;
     }
 
-    private void validateUser(User currentUser){
-        userRepository.findByEmail(currentUser.getEmail())
+    private User validateUser(User currentUser){
+        return userRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
-    private void validateUserAuthorization(TransferRequest request, User currentUser){
-        if(currentUser.getRole() == UserRole.CUSTOMER){
-            for(Account account: currentUser.getAccounts()){
-                if(account.getIban().equals(request.fromIban())){
-                    return;
-                }
-            }
+    private void validateUserAuthorization(User currentUser, Account from){
+        if(currentUser.getRole() == UserRole.CUSTOMER
+                && (from.getOwner() == null || !from.getOwner().getId().equals(currentUser.getId()))){
             throw new UnauthorizedException("Unauthorized to transfer from this account");
         }
     }

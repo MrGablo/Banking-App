@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Profile("seed")
 @Component
@@ -130,6 +131,23 @@ public class DataSeeder implements CommandLineRunner {
 
             transactionRepository.save(firstTransaction);
             transactionRepository.save(secondTransaction);
+
+
+            
+            for (int i = 1; i <= 18; i++) {
+                Transaction customerTransaction = new Transaction();
+                boolean outgoing = i % 2 == 0;
+                customerTransaction.setFromIban(outgoing ? thirdAccount.getIban() : firstAccount.getIban());
+                customerTransaction.setToIban(outgoing ? firstAccount.getIban() : thirdAccount.getIban());
+                customerTransaction.setAmount(BigDecimal.valueOf(10L + i));
+                customerTransaction.setUserInitiating(outgoing ? demoUser.getFirstName() : firstEmployeeUser.getFirstName());
+                customerTransaction.setTransferType(TransferType.CHECKING_TO_CHECKING);
+                customerTransaction.setCurrency(Currency.EURO);
+                customerTransaction.setDescription("Seeded pagination transaction " + i);
+                customerTransaction.setCreatedAt(LocalDateTime.now().minusDays(i));
+                customerTransaction.setUpdatedAt(LocalDateTime.now().minusDays(i));
+                transactionRepository.save(customerTransaction);
+            }
         }
     }
 }
