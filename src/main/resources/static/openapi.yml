@@ -1,16 +1,22 @@
 openapi: 3.0.3
 info:
-  title: team 2 Core API
+  title: Team 2 Banking API
   version: 1.0.0
   description: |
-    REST API for the team's 2 banking application.
-    - **Currency**: EUR.
-    - **IBAN Format**: `NLxxINHO0xxxxxxxxx`.
-    - **Security**: JWT Bearer Token required for most routes.
-
+    REST API for Team 2 banking.
+    JWT Bearer authentication is required for protected routes.
 servers:
+  - url: https://banking-app-nk5b.onrender.com/api/v1
+    description: Deployed Render backend
   - url: /api/v1
-    description: API base path
+    description: Same-origin API base path
+
+tags:
+  - name: Authentication
+  - name: Accounts
+  - name: Transactions
+  - name: ATM
+  - name: Users
 
 components:
   securitySchemes:
@@ -19,95 +25,29 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Size:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 20
+
   schemas:
-    User:
+    MessageResponse:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
-        firstName:
+        message:
           type: string
-          example: "John"
-        lastName:
-          type: string
-          example: "Doe"
-        email:
-          type: string
-          format: email
-          example: "j.doe@example.com"
-        bsn:
-          type: string
-          pattern: '^[0-9]{8,9}$'
-          example: "123456789"
-        phoneNumber:
-          type: string
-          pattern: '^\+?[0-9]{8,15}$'
-          example: "+31612345678"
-        role:
-          type: string
-          enum: [CUSTOMER, EMPLOYEE]
-          example: "CUSTOMER"
-        approved:
-          type: boolean
-          example: true
-        active:
-          type: boolean
-          example: true
-
-    Account:
-      type: object
-      properties:
-        iban:
-          type: string
-          pattern: '^NL[0-9]{2}INHO0[0-9]{9}$'
-          example: "NL01INHO0123456789"
-        type:
-          type: string
-          enum: [CHECKING, SAVINGS]
-        balance:
-          type: number
-          format: double
-          example: 1250.50
-        absoluteLimit:
-          type: number
-          example: -50.00
-        dailyLimit:
-          type: number
-          example: 500.00
-        active:
-          type: boolean
-          example: true
-        ownerId:
-          type: integer
-          example: 1
-        ownerName:
-          type: string
-          example: "John Doe"
-
-    Transaction:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1001
-        fromIban:
-          type: string
-          example: "NL01INHO0111111111"
-        toIban:
-          type: string
-          example: "NL01INHO0222222222"
-        amount:
-          type: number
-          format: double
-          example: 75.00
-        timestamp:
-          type: string
-          format: date-time
-          example: "2026-04-20T14:00:00"
-        userInitiating:
-          type: string
-          example: "j.doe@example.com"
+          example: Account successfully closed
 
     LoginRequest:
       type: object
@@ -116,10 +56,10 @@ components:
         email:
           type: string
           format: email
-          example: "j.doe@example.com"
+          example: jane.doe@example.com
         password:
           type: string
-          example: "password123"
+          example: password123
 
     RegisterRequest:
       type: object
@@ -127,71 +67,287 @@ components:
       properties:
         firstName:
           type: string
-          example: "John"
+          example: Jane
         lastName:
           type: string
-          example: "Doe"
+          example: Doe
         email:
           type: string
           format: email
-          example: "j.doe@example.com"
+          example: jane.doe@example.com
         bsn:
           type: string
           pattern: '^[0-9]{8,9}$'
-          example: "123456789"
+          example: '123456789'
         phoneNumber:
           type: string
           pattern: '^\+?[0-9]{8,15}$'
-          example: "+31612345678"
+          example: '+31612345678'
         password:
           type: string
           minLength: 6
           maxLength: 100
-          example: "SecurePassword123!"
+          example: SecurePassword123!
 
     AuthResponse:
       type: object
       properties:
         message:
           type: string
+          example: Login successful
         approved:
           type: boolean
+          example: true
         token:
           type: string
+          example: eyJhbGciOiJIUzI1NiJ9...
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        firstName:
+          type: string
+          example: Jane
+        lastName:
+          type: string
+          example: Doe
+        email:
+          type: string
+          format: email
+          example: jane.doe@example.com
+        bsn:
+          type: string
+          example: '123456789'
+        phoneNumber:
+          type: string
+          example: '+31612345678'
+        role:
+          type: string
+          enum: [CUSTOMER, EMPLOYEE]
+          example: CUSTOMER
+        approved:
+          type: boolean
+          example: true
+        active:
+          type: boolean
+          example: true
+
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          type: string
+        role:
+          type: string
+        approved:
+          type: boolean
+        active:
+          type: boolean
+
+    AccountResponse:
+      type: object
+      properties:
+        iban:
+          type: string
+          example: NL01INHO0123456789
+        type:
+          type: string
+          enum: [CHECKING, SAVINGS]
+          example: CHECKING
+        balance:
+          type: number
+          format: double
+          example: 300.00
+        absoluteLimit:
+          type: number
+          format: double
+          example: -50.00
+        dailyLimit:
+          type: number
+          format: double
+          example: 500.00
+        active:
+          type: boolean
+          example: true
+        ownerId:
+          type: integer
+          format: int64
+          example: 1
+        ownerName:
+          type: string
+          example: Jane Doe
+
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1001
+        fromIban:
+          type: string
+          nullable: true
+          example: NL01INHO0111111111
+        toIban:
+          type: string
+          nullable: true
+          example: NL01INHO0222222222
+        amount:
+          type: number
+          format: double
+          example: 75.00
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-06-08T14:00:00'
+        userInitiating:
+          type: string
+          example: jane.doe@example.com
+        description:
+          type: string
+          nullable: true
+          example: ATM deposit
+
+    PageAccountResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    PageTransactionResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    PageUserResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
 
     UpdateLimitsRequest:
       type: object
+      required: [absoluteLimit, dailyLimit]
       properties:
         absoluteLimit:
           type: number
           format: double
+          example: -50.00
         dailyLimit:
           type: number
           format: double
+          minimum: 0
+          example: 500.00
 
     TransferRequest:
       type: object
-      required: [fromIban, toIban, amount]
+      required: [amount]
       properties:
         fromIban:
           type: string
-          pattern: '^NL[0-9]{2}INHO0[0-9]{9}$'
-          example: "NL01INHO0111111111"
+          nullable: true
+          example: NL01INHO0111111111
         toIban:
           type: string
-          pattern: '^NL[0-9]{2}INHO0[0-9]{9}$'
-          example: "NL01INHO0222222222"
+          nullable: true
+          example: NL01INHO0222222222
         amount:
           type: number
           format: double
+          minimum: 0
+          exclusiveMinimum: true
           example: 100.00
+        transferType:
+          type: string
+          enum: [CHECKING_TO_CHECKING, OWN_ACCOUNTS, ATM_WITHDRAWAL, ATM_DEPOSIT]
+          example: CHECKING_TO_CHECKING
+        description:
+          type: string
+          nullable: true
+          example: Monthly transfer
+
+    ApproveCustomerRequest:
+      type: object
+      required: [absoluteLimit, dailyLimit]
+      properties:
+        absoluteLimit:
+          type: number
+          format: double
+          example: -50.00
+        dailyLimit:
+          type: number
+          format: double
+          minimum: 0
+          example: 500.00
+
+    CustomerIbanResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        ibans:
+          type: array
+          items:
+            type: string
 
 paths:
   /auth/login:
     post:
-      summary: User Login
-      tags:
-        - Authentication
+      tags: [Authentication]
+      summary: Log in
       requestBody:
         required: true
         content:
@@ -200,7 +356,7 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Login successful
+          description: Login response
           content:
             application/json:
               schema:
@@ -210,9 +366,8 @@ paths:
 
   /auth/register:
     post:
-      summary: Customer Registration
-      tags:
-        - Authentication
+      tags: [Authentication]
+      summary: Register a customer
       requestBody:
         required: true
         content:
@@ -221,67 +376,52 @@ paths:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
         '201':
-          description: Customer registered successfully
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
         '400':
-          description: Invalid input
+          description: Validation error
 
   /auth/me:
     get:
+      tags: [Authentication]
       summary: Get current authenticated user
-      tags:
-        - Authentication
       security:
         - BearerAuth: []
       responses:
         '200':
-          description: Current user info
+          description: Current user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserDTO'
         '401':
           description: Unauthorized
 
   /accounts:
     get:
-      summary: Get all accounts with pagination
-      tags:
-        - Accounts
+      tags: [Accounts]
+      summary: List visible accounts
+      description: Customers receive their own accounts; employees and admins receive all accounts.
       security:
         - BearerAuth: []
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
       responses:
         '200':
-          description: OK
+          description: Accounts page
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  content:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Account'
-                  totalPages:
-                    type: integer
-                  totalElements:
-                    type: integer
+                $ref: '#/components/schemas/PageAccountResponse'
 
   /accounts/{iban}/close:
     post:
+      tags: [Accounts]
       summary: Close an account
-      tags:
-        - Accounts
       security:
         - BearerAuth: []
       parameters:
@@ -291,16 +431,19 @@ paths:
           schema:
             type: string
       responses:
-        '204':
-          description: Account closed successfully
+        '200':
+          description: Account closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
         '404':
           description: Account not found
 
   /accounts/{iban}/limits:
     put:
-      summary: Update account limits (Employee only)
-      tags:
-        - Accounts
+      tags: [Accounts]
+      summary: Update account limits
       security:
         - BearerAuth: []
       parameters:
@@ -316,16 +459,19 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateLimitsRequest'
       responses:
-        '204':
-          description: Limits updated successfully
+        '200':
+          description: Limits updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
         '403':
           description: Forbidden
 
   /accounts/{iban}/transactions:
     get:
-      summary: Get transactions for a specific account
-      tags:
-        - Accounts
+      tags: [Accounts]
+      summary: List transactions for an account
       security:
         - BearerAuth: []
       parameters:
@@ -334,69 +480,84 @@ paths:
           required: true
           schema:
             type: string
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
       responses:
         '200':
-          description: OK
+          description: Transactions page
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  content:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Transaction'
-                  totalPages:
-                    type: integer
+                $ref: '#/components/schemas/PageTransactionResponse'
 
   /transactions:
     get:
-      summary: Get all transactions with pagination
-      tags:
-        - Transactions
+      tags: [Transactions]
+      summary: List visible transactions
+      description: Customers receive transactions for their accounts; employees and admins receive all transactions.
       security:
         - BearerAuth: []
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
       responses:
         '200':
-          description: OK
+          description: Transactions page
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  content:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Transaction'
-                  totalPages:
-                    type: integer
+                $ref: '#/components/schemas/PageTransactionResponse'
+
+  /transactions/search:
+    get:
+      tags: [Transactions]
+      summary: Search transactions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: maxAmount
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: exactAmount
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: iban
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Filtered transactions page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageTransactionResponse'
 
   /transactions/transfer-checking:
     post:
-      summary: Transfer from a checking account to another checking account
-      tags:
-        - Transactions
+      tags: [Transactions]
+      summary: Transfer between checking accounts
       security:
         - BearerAuth: []
       requestBody:
@@ -407,19 +568,12 @@ paths:
               $ref: '#/components/schemas/TransferRequest'
       responses:
         '201':
-          description: Transfer successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Transaction'
-        '403':
-          description: Limit exceeded
+          description: Transaction created
 
   /transactions/transfer:
     post:
+      tags: [Transactions]
       summary: Transfer between own accounts
-      tags:
-        - Transactions
       security:
         - BearerAuth: []
       requestBody:
@@ -430,52 +584,77 @@ paths:
               $ref: '#/components/schemas/TransferRequest'
       responses:
         '201':
-          description: Transfer successful
+          description: Transaction created
+
+  /atm/deposit:
+    post:
+      tags: [ATM]
+      summary: Deposit money into an account
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+            example:
+              toIban: NL01INHO0123456789
+              amount: 20.00
+              transferType: ATM_DEPOSIT
+      responses:
+        '201':
+          description: Deposit transaction
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-        '403':
-          description: Limit exceeded
+                $ref: '#/components/schemas/TransactionResponse'
+
+  /atm/withdraw:
+    post:
+      tags: [ATM]
+      summary: Withdraw money from an account
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+            example:
+              fromIban: NL01INHO0123456789
+              amount: 20.00
+              transferType: ATM_WITHDRAWAL
+      responses:
+        '201':
+          description: Withdrawal transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
 
   /users:
     get:
-      summary: Get customers without accounts (Employee only)
-      tags:
-        - Users
+      tags: [Users]
+      summary: List customers without accounts
       security:
         - BearerAuth: []
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
       responses:
         '200':
-          description: OK
+          description: Users page
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  content:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/User'
-                  totalPages:
-                    type: integer
+                $ref: '#/components/schemas/PageUserResponse'
 
   /users/customer-ibans:
     get:
-      summary: Search user IBANs by name
-      tags:
-        - Users
+      tags: [Users]
+      summary: Search customer IBANs by name
       security:
         - BearerAuth: []
       parameters:
@@ -491,31 +670,38 @@ paths:
             type: string
       responses:
         '200':
-          description: OK
+          description: Matching customer IBANs
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    userId:
-                      type: integer
-                      format: int64
-                    firstName:
-                      type: string
-                    lastName:
-                      type: string
-                    ibans:
-                      type: array
-                      items:
-                        type: string
+                  $ref: '#/components/schemas/CustomerIbanResponse'
+
+  /users/customer-ibans/search-by-iban:
+    get:
+      tags: [Users]
+      summary: Search customer by IBAN
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: iban
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerIbanResponse'
 
   /users/{userId}/approve:
     post:
-      summary: Approve customer and create accounts
-      tags:
-        - Users
+      tags: [Users]
+      summary: Approve a customer and create accounts
       security:
         - BearerAuth: []
       parameters:
@@ -524,27 +710,25 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/ApproveCustomerRequest'
       responses:
         '201':
-          description: Customer approved and accounts created
+          description: Approved customer
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '403':
-          description: Forbidden
+                $ref: '#/components/schemas/UserResponse'
 
   /users/{userId}:
     delete:
-      summary: Deactivate customer
-      tags:
-        - Users
+      tags: [Users]
+      summary: Deactivate a customer
       security:
         - BearerAuth: []
       parameters:
@@ -553,10 +737,11 @@ paths:
           required: true
           schema:
             type: integer
+            format: int64
       responses:
         '200':
           description: Customer deactivated
-        '403':
-          description: Forbidden
-        '404':
-          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'

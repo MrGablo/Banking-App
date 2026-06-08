@@ -23,6 +23,8 @@ public interface TransactionService {
 
     public Page<TransactionResponse> getTransactionsForUser(User currentUser, Pageable pageable);
 
+    Page<TransactionResponse> getVisibleTransactions(User currentUser, Pageable pageable);
+
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable);
 
     Page<TransactionResponse> searchTransactions(

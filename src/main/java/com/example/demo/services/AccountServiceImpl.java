@@ -1,10 +1,12 @@
 package com.example.demo.services;
 
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.AccountResponse;
 import com.example.demo.dtos.UpdateLimitsRequest;
 import com.example.demo.entity.Account;
+import com.example.demo.entity.User;
 import com.example.demo.repositories.AccountRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -71,5 +73,13 @@ public class AccountServiceImpl implements AccountService {
                 .map(AccountResponse::from);
     }
 
+    @Override
+    public Page<AccountResponse> getVisibleAccounts(User currentUser, Pageable pageable) {
+        if (currentUser.getRole() == UserRole.CUSTOMER) {
+            return getAccountsForOwner(currentUser.getId(), pageable);
+        }
+
+        return getAllAccounts(pageable);
+    }
 }
 

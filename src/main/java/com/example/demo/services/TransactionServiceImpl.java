@@ -79,6 +79,15 @@ public class TransactionServiceImpl implements TransactionService {
                 .map(TransactionResponse::from);
     }
 
+    @Override
+    public Page<TransactionResponse> getVisibleTransactions(User currentUser, Pageable pageable) {
+        if (currentUser.getRole() == UserRole.CUSTOMER) {
+            return getTransactionsForUser(currentUser, pageable);
+        }
+
+        return getAllTransactions(pageable);
+    }
+
 
     @Override
     public Page<TransactionResponse> getTransactionsForAccount(String iban, Pageable pageable) {

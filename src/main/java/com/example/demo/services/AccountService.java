@@ -3,6 +3,7 @@ package com.example.demo.services;
 import com.example.demo.dtos.AccountResponse;
 import com.example.demo.dtos.UpdateLimitsRequest;
 import com.example.demo.entity.Account;
+import com.example.demo.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,5 +22,7 @@ public interface AccountService {
     public Page<AccountResponse> getAllAccounts(Pageable pageable);
 
     public Page<AccountResponse> getAccountsForOwner(Long ownerId, Pageable pageable);
+
+    Page<AccountResponse> getVisibleAccounts(User currentUser, Pageable pageable);
 }
 

@@ -1,6 +1,5 @@
 package com.example.demo.controllers;
 
-import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.AccountResponse;
 import com.example.demo.dtos.MessageResponse;
@@ -58,13 +57,7 @@ public class AccountController {
             @RequestParam(defaultValue = "20") int size) {
         PageRequest pageRequest = PageRequest.of(page, Math.min(size, maxPaginationSize));
 
-        if (currentUser.getRole() == UserRole.CUSTOMER) {
-            return PageResponse.of(accountService.getAccountsForOwner(currentUser.getId(), pageRequest));
-        }
-
-        return PageResponse.of(
-                accountService.getAllAccounts(pageRequest)
-        );
+        return PageResponse.of(accountService.getVisibleAccounts(currentUser, pageRequest));
     }
 
     @GetMapping("/{iban}/transactions")
