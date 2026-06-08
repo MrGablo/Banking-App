@@ -75,7 +75,7 @@ class AccountControllerTest {
 
     // closeAccount
     @Test
-    void closeAccountReturnsOk() throws Exception {
+    void closeAccount_returnsOk() throws Exception {
         doNothing().when(accountService).closeAccount("NL01INHO0123456789");
 
         mockMvc.perform(post("/api/v1/accounts/NL01INHO0123456789/close")
@@ -85,7 +85,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void closeAccountReturnsNotFound() throws Exception {
+    void closeAccount_returnsNotFound() throws Exception {
         doThrow(new NotFoundException("Account not found: NL01INHO0000000000"))
                 .when(accountService).closeAccount("NL01INHO0000000000");
 
@@ -95,7 +95,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void closeAccountReturnsConflictWhenAlreadyClosed() throws Exception {
+    void closeAccount_returnsConflict() throws Exception {
         doThrow(new ConflictException("Account is already closed"))
                 .when(accountService).closeAccount("NL01INHO0123456789");
 
@@ -105,7 +105,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void closeAccountForbiddenForCustomer() throws Exception {
+    void closeAccount_forbidsCustomer() throws Exception {
         mockMvc.perform(post("/api/v1/accounts/NL01INHO0123456789/close")
                         .with(authentication(customerAuth)))
                 .andExpect(status().isForbidden());
@@ -113,7 +113,7 @@ class AccountControllerTest {
 
     // updateLimits
     @Test
-    void updateLimitsReturnsOk() throws Exception {
+    void updateLimits_returnsOk() throws Exception {
         UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("1000.00"));
         doNothing().when(accountService).updateLimits(eq("NL01INHO0123456789"), any());
 
@@ -126,7 +126,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void updateLimitsForbiddenForCustomer() throws Exception {
+    void updateLimits_forbidsCustomer() throws Exception {
         UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("1000.00"));
 
         mockMvc.perform(put("/api/v1/accounts/NL01INHO0123456789/limits")
@@ -138,11 +138,11 @@ class AccountControllerTest {
 
     //getAllAccounts
     @Test
-    void getAllAccountsReturnsPage() throws Exception {
+    void getAllAccounts_returnsPage() throws Exception {
         AccountResponse response = new AccountResponse("NL01INHO0123456789", AccountType.CHECKING,
                 new BigDecimal("1000.00"), new BigDecimal("0.00"), new BigDecimal("500.00"), true, 1L, "John Doe");
 
-        when(accountService.getAllAccounts(any())).thenReturn(new PageImpl<>(List.of(response)));
+        when(accountService.getVisibleAccounts(any(User.class), any())).thenReturn(new PageImpl<>(List.of(response)));
 
         mockMvc.perform(get("/api/v1/accounts")
                         .with(authentication(employeeAuth)))
@@ -151,11 +151,11 @@ class AccountControllerTest {
     }
 
     @Test
-    void getAllAccountsReturnsCurrentCustomerAccounts() throws Exception {
+    void getAllAccounts_returnsCustomerAccounts() throws Exception {
         AccountResponse response = new AccountResponse("NL03INHO1234567890", AccountType.CHECKING,
                 new BigDecimal("300.00"), new BigDecimal("100.00"), new BigDecimal("200.00"), true, 2L, "Jane Doe");
 
-        when(accountService.getAccountsForOwner(eq(2L), any())).thenReturn(new PageImpl<>(List.of(response)));
+        when(accountService.getVisibleAccounts(any(User.class), any())).thenReturn(new PageImpl<>(List.of(response)));
 
         mockMvc.perform(get("/api/v1/accounts")
                         .with(authentication(customerAuth)))
@@ -165,14 +165,14 @@ class AccountControllerTest {
     }
 
     @Test
-    void getAllAccountsForbiddenWithoutAuth() throws Exception {
+    void getAllAccounts_forbidsAnonymous() throws Exception {
         mockMvc.perform(get("/api/v1/accounts"))
                 .andExpect(status().isForbidden());
     }
 
     // getAccountTransactions
     @Test
-    void getAccountTransactionsReturnsPage() throws Exception {
+    void getAccountTransactions_returnsPage() throws Exception {
         TransactionResponse txResponse = new TransactionResponse(1L, "NL01INHO0111111111",
                 "NL01INHO0222222222", new BigDecimal("100.00"), LocalDateTime.now(), "John", "Lunch");
 

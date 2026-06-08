@@ -22,7 +22,7 @@ class TransferPolicyTest {
     private final TransferPolicy transferPolicy = new TransferPolicy();
 
     @Test
-    void validateTransferAllowsCustomerCheckingToCheckingWhenTheyOwnSourceAccount() {
+    void validateTransfer_allowsOwner() {
         User user = approvedCustomer(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -41,7 +41,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsUnauthenticatedUser() {
+    void validateTransfer_rejectsAnonymous() {
         Account from = account(AccountType.CHECKING, approvedUser(1L), "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
         TransferRequest request = request("NL01INHO0111111111", "NL01INHO0222222222", "40.00");
@@ -57,7 +57,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsSameSourceAndDestination() {
+    void validateTransfer_rejectsSameAccount() {
         User user = approvedUser(1L);
         Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         TransferRequest request = request("NL01INHO0111111111", "NL01INHO0111111111", "40.00");
@@ -73,7 +73,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsUnapprovedUser() {
+    void validateTransfer_rejectsUnapprovedUser() {
         User user = user(1L, false);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -90,7 +90,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsNonCheckingAccountsForCheckingToCheckingTransfers() {
+    void validateTransfer_rejectsNonChecking() {
         User user = approvedUser(1L);
         Account from = account(AccountType.SAVINGS, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -107,7 +107,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsCustomerCheckingToCheckingFromNonOwnerSourceAccount() {
+    void validateTransfer_rejectsNonOwner() {
         User user = approvedCustomer(1L);
         Account from = account(AccountType.CHECKING, approvedUser(2L), "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(3L), "25.00", "0.00", "500.00");
@@ -124,7 +124,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferAllowsEmployeeCheckingToCheckingFromNonOwnerSourceAccount() {
+    void validateTransfer_allowsEmployee() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, approvedUser(2L), "100.00", "50.00", "500.00");
         Account to = account(AccountType.CHECKING, approvedUser(3L), "25.00", "0.00", "500.00");
@@ -141,7 +141,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferAllowsCheckingAndSavingsOwnedByUser() {
+    void validateTransfer_allowsOwnAccounts() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.SAVINGS, user, "25.00", "0.00", "500.00");
@@ -158,7 +158,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsOwnAccountTransferWhenAccountsAreNotOwnedByUser() {
+    void validateTransfer_rejectsOtherAccounts() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
         Account to = account(AccountType.SAVINGS, approvedUser(2L), "25.00", "0.00", "500.00");
@@ -175,7 +175,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsAbsoluteLimitExceeded() {
+    void validateTransfer_rejectsAbsoluteLimit() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "10.00", "5.00", "500.00");
         Account to = account(AccountType.SAVINGS, user, "25.00", "0.00", "500.00");
@@ -192,7 +192,7 @@ class TransferPolicyTest {
     }
 
     @Test
-    void validateTransferRejectsDailyLimitExceeded() {
+    void validateTransfer_rejectsDailyLimit() {
         User user = approvedUser(1L);
         Account from = account(AccountType.CHECKING, user, "100.00", "50.00", "50.00");
         Account to = account(AccountType.SAVINGS, user, "25.00", "0.00", "500.00");
@@ -206,6 +206,85 @@ class TransferPolicyTest {
                 new BigDecimal("40.00"),
                 TransferType.OWN_ACCOUNTS
         ));
+    }
+
+    @Test
+    void validateAtmWithdrawal_allowsCustomerOwner() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                "NL01INHO0111111111",
+                null,
+                new BigDecimal("40.00"),
+                TransferType.ATM_WITHDRAWAL,
+                "ATM withdrawal"
+        );
+
+        BigDecimal newBalance = transferPolicy.validateAtmWithdrawal(user, request, account, BigDecimal.ZERO);
+
+        assertEquals(new BigDecimal("60.00"), newBalance);
+    }
+
+    @Test
+    void validateAtmWithdrawal_rejectsEmployee() {
+        User user = approvedUser(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                "NL01INHO0111111111",
+                null,
+                new BigDecimal("40.00"),
+                TransferType.ATM_WITHDRAWAL,
+                "ATM withdrawal"
+        );
+
+        assertThrows(ForbiddenException.class,
+                () -> transferPolicy.validateAtmWithdrawal(user, request, account, BigDecimal.ZERO));
+    }
+
+    @Test
+    void validateAtmWithdrawal_rejectsMissingFromIban() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                null,
+                null,
+                new BigDecimal("40.00"),
+                TransferType.ATM_WITHDRAWAL,
+                "ATM withdrawal"
+        );
+
+        assertThrows(ConflictException.class,
+                () -> transferPolicy.validateAtmWithdrawal(user, request, account, BigDecimal.ZERO));
+    }
+
+    @Test
+    void validateAtmDeposit_allowsCustomerOwner() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, user, "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                null,
+                "NL01INHO0111111111",
+                new BigDecimal("40.00"),
+                TransferType.ATM_DEPOSIT,
+                "ATM deposit"
+        );
+
+        assertDoesNotThrow(() -> transferPolicy.validateAtmDeposit(user, request, account));
+    }
+
+    @Test
+    void validateAtmDeposit_rejectsOtherCustomerAccount() {
+        User user = approvedCustomer(1L);
+        Account account = account(AccountType.CHECKING, approvedCustomer(2L), "100.00", "50.00", "500.00");
+        TransferRequest request = new TransferRequest(
+                null,
+                "NL01INHO0111111111",
+                new BigDecimal("40.00"),
+                TransferType.ATM_DEPOSIT,
+                "ATM deposit"
+        );
+
+        assertThrows(ForbiddenException.class, () -> transferPolicy.validateAtmDeposit(user, request, account));
     }
 
     private User approvedUser(Long id) {

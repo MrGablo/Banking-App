@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.common.enums.AccountType;
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.exception.ConflictException;
 import com.example.demo.common.exception.NotFoundException;
 import com.example.demo.dtos.AccountResponse;
@@ -57,7 +58,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void getAccountByIbanReturnsAccountWhenFound() {
+    void getAccountByIban_returnsAccount() {
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 
         Optional<Account> result = accountService.getAccountByIban("NL01INHO0123456789");
@@ -67,7 +68,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void getAccountByIbanReturnsEmptyWhenNotFound() {
+    void getAccountByIban_returnsEmpty() {
         when(accountRepository.findByIban("NL01INHO0000000000")).thenReturn(Optional.empty());
 
         Optional<Account> result = accountService.getAccountByIban("NL01INHO0000000000");
@@ -76,7 +77,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void addAccountSavesAndReturnsAccount() {
+    void addAccount_savesAccount() {
         when(accountRepository.save(account)).thenReturn(account);
 
         Account result = accountService.addAccount(account);
@@ -86,7 +87,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void closeAccountSetsInactive() {
+    void closeAccount_setsInactive() {
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 
         accountService.closeAccount("NL01INHO0123456789");
@@ -96,14 +97,14 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void closeAccountThrowsWhenNotFound() {
+    void closeAccount_throwsNotFound() {
         when(accountRepository.findByIban("NL01INHO0000000000")).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> accountService.closeAccount("NL01INHO0000000000"));
     }
 
     @Test
-    void closeAccountThrowsWhenAlreadyClosed() {
+    void closeAccount_throwsConflict() {
         account.setActive(false);
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 
@@ -111,7 +112,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void updateLimitsUpdatesAndSaves() {
+    void updateLimits_updatesAndSaves() {
         UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("1000.00"));
         when(accountRepository.findByIban("NL01INHO0123456789")).thenReturn(Optional.of(account));
 
@@ -123,7 +124,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void updateLimitsThrowsWhenNotFound() {
+    void updateLimits_throwsNotFound() {
         UpdateLimitsRequest request = new UpdateLimitsRequest(new BigDecimal("100.00"), new BigDecimal("1000.00"));
         when(accountRepository.findByIban("NL01INHO0000000000")).thenReturn(Optional.empty());
 
@@ -131,7 +132,7 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void getAllAccountsReturnsPageOfResponses() {
+    void getAllAccounts_returnsResponses() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Account> page = new PageImpl<>(List.of(account));
         when(accountRepository.findAll(pageable)).thenReturn(page);
@@ -140,5 +141,43 @@ class AccountServiceImplTest {
 
         assertEquals(1, result.getTotalElements());
         assertEquals("NL01INHO0123456789", result.getContent().get(0).iban());
+    }
+
+    @Test
+    void getAccountsForOwner_returnsResponses() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Account> page = new PageImpl<>(List.of(account));
+        when(accountRepository.findByOwnerId(1L, pageable)).thenReturn(page);
+
+        Page<AccountResponse> result = accountService.getAccountsForOwner(1L, pageable);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(1L, result.getContent().get(0).ownerId());
+    }
+
+    @Test
+    void getVisibleAccounts_returnsCustomerAccounts() {
+        owner.setRole(UserRole.CUSTOMER);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(accountRepository.findByOwnerId(1L, pageable)).thenReturn(new PageImpl<>(List.of(account)));
+
+        Page<AccountResponse> result = accountService.getVisibleAccounts(owner, pageable);
+
+        assertEquals(1, result.getTotalElements());
+        verify(accountRepository).findByOwnerId(1L, pageable);
+        verify(accountRepository, never()).findAll(pageable);
+    }
+
+    @Test
+    void getVisibleAccounts_returnsAllAccountsForEmployee() {
+        owner.setRole(UserRole.EMPLOYEE);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(accountRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(account)));
+
+        Page<AccountResponse> result = accountService.getVisibleAccounts(owner, pageable);
+
+        assertEquals(1, result.getTotalElements());
+        verify(accountRepository).findAll(pageable);
+        verify(accountRepository, never()).findByOwnerId(anyLong(), any());
     }
 }

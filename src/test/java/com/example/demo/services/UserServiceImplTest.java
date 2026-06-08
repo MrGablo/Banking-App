@@ -64,7 +64,7 @@ class UserServiceImplTest {
     // --- getCustomersWithoutAccounts ---
 
     @Test
-    void getCustomersWithoutAccountsReturnsPage() {
+    void getCustomersWithoutAccounts_returnsPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> page = new PageImpl<>(List.of(customer));
         when(userRepository.findCustomersWithoutAccounts(pageable)).thenReturn(page);
@@ -76,7 +76,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void getCustomersWithoutAccountsReturnsEmptyPage() {
+    void getCustomersWithoutAccounts_returnsEmptyPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> page = new PageImpl<>(List.of());
         when(userRepository.findCustomersWithoutAccounts(pageable)).thenReturn(page);
@@ -89,7 +89,7 @@ class UserServiceImplTest {
     // --- getAllCustomers ---
 
     @Test
-    void getAllCustomersReturnsPage() {
+    void getAllCustomers_returnsPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> page = new PageImpl<>(List.of(customer));
         when(userRepository.findByRoleAndActive(UserRole.CUSTOMER, true, pageable)).thenReturn(page);
@@ -103,7 +103,7 @@ class UserServiceImplTest {
     // --- approveCustomer ---
 
     @Test
-    void approveCustomerSuccessfully() {
+    void approveCustomer_succeeds() {
         ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
 
         Account checking = new Account();
@@ -124,7 +124,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void approveCustomerThrowsWhenUserNotFound() {
+    void approveCustomer_throwsNotFound() {
         ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -132,7 +132,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void approveCustomerThrowsWhenNotCustomerRole() {
+    void approveCustomer_throwsForRole() {
         customer.setRole(UserRole.EMPLOYEE);
         ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
@@ -141,7 +141,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void approveCustomerThrowsWhenAlreadyApproved() {
+    void approveCustomer_throwsWhenApproved() {
         customer.setApproved(true);
         ApproveCustomerRequest request = new ApproveCustomerRequest(new BigDecimal("0.00"), new BigDecimal("500.00"));
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
@@ -150,7 +150,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void searchCustomerIbansReturnsOnlyCheckingAccounts() {
+    void searchCustomerIbans_returnsCheckingAccounts() {
         customer.setApproved(true);
         Account checking = account("NL01INHO0123456789", AccountType.CHECKING);
 
@@ -166,7 +166,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void searchCustomerByIbanReturnsOnlyOwnerCheckingAccounts() {
+    void searchCustomerByIban_returnsOwnerAccounts() {
         customer.setApproved(true);
         Account searchedSavings = account("NL02INHO0987654321", AccountType.SAVINGS);
         Account checking = account("NL01INHO0123456789", AccountType.CHECKING);
