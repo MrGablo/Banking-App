@@ -119,7 +119,7 @@ class TransactionServiceImplTest {
     void getAllTransactions_returnsPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Transaction> page = new PageImpl<>(List.of(transaction));
-        when(transactionRepository.findAll(pageable)).thenReturn(page);
+        when(transactionRepository.findAllByOrderByCreatedAtDesc(pageable)).thenReturn(page);
 
         Page<TransactionResponse> result = transactionService.getAllTransactions(pageable);
 
@@ -211,6 +211,8 @@ class TransactionServiceImplTest {
                 new BigDecimal("100.00"), "Test");
 
         when(userRepository.findByEmail("customer@test.com")).thenReturn(Optional.of(customer));
+        when(accountRepository.findByIban("NL01INHO0111111111")).thenReturn(Optional.of(fromAccount));
+        when(accountRepository.findByIban("NL01INHO0222222222")).thenReturn(Optional.of(toAccount));
 
         assertThrows(UnauthorizedException.class,
                 () -> transactionService.transfer(request, customer, TransferType.CHECKING_TO_CHECKING));

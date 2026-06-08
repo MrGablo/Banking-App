@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +27,7 @@ class CustomPermissionEvaluatorTest {
     void setUp() {
         currentUser = new User();
         currentUser.setId(1L);
-        authentication = new UsernamePasswordAuthenticationToken(currentUser, null);
+        authentication = new UsernamePasswordAuthenticationToken(currentUser, null, List.of());
     }
 
     @Test
