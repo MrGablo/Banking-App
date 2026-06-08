@@ -3,8 +3,10 @@ package com.example.demo.controllers;
 import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.enums.TransferType;
 import com.example.demo.common.pagination.PageResponse;
+import org.springframework.data.domain.Pageable;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.TransferRequest;
+import com.example.demo.dtos.TransactionSearchRequest;
 import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
 import com.example.demo.services.TransactionService;
@@ -16,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Sort;
+
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -60,6 +64,25 @@ public class TransactionController {
 
         return PageResponse.of(
                 transactionService.getAllTransactions(pageRequest)
+        );
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE')")
+    public PageResponse<TransactionResponse> searchTransactions(
+            @AuthenticationPrincipal User currentUser,
+            @ModelAttribute TransactionSearchRequest filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(
+                page,
+                Math.min(size, 100),
+                Sort.by("createdAt").descending()
+        );
+
+        return PageResponse.of(
+                transactionService.searchTransactions(currentUser, filter, pageable)
         );
     }
 }

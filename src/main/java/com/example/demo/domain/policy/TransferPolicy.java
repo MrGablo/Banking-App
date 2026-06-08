@@ -24,23 +24,73 @@ public class TransferPolicy {
         enforceApprovedUser(currentUser);
 
         if (transferType == TransferType.CHECKING_TO_CHECKING) {
+            enforceRequiredIban(request.fromIban(), "From IBAN is required");
+            enforceRequiredIban(request.toIban(), "To IBAN is required");
+            enforceDifferentAccounts(request);
+
             enforceCheckingAccount(from);
             enforceCheckingAccount(to);
+
             if (!isEmployee(currentUser)) {
                 enforceSourceAccountOwnership(currentUser, from);
             }
-            enforceSufficientFund(from, request.amount());
-        } else {
-            enforceAccountsBelongToUser(currentUser, from, to);
-            enforcePersonalAccounts(from, to);
+
+            return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
         }
 
-        return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
+        if (transferType == TransferType.OWN_ACCOUNTS) {
+            enforceRequiredIban(request.fromIban(), "From IBAN is required");
+            enforceRequiredIban(request.toIban(), "To IBAN is required");
+            enforceDifferentAccounts(request);
+
+            enforceAccountsBelongToUser(currentUser, from, to);
+            enforcePersonalAccounts(from, to);
+
+            return enforceTransferValidation(from, request.amount(), totalTransferredAmount);
+        }
+
+        throw new ConflictException("Unsupported transfer type");
+    }
+    public BigDecimal validateAtmWithdrawal(
+            User currentUser,
+            TransferRequest request,
+            Account account,
+            BigDecimal totalTransferredAmount
+    ) {
+        enforceAuthenticatedUser(currentUser);
+        enforceApprovedUser(currentUser);
+        enforceCustomer(currentUser);
+        enforceRequiredIban(request.fromIban(), "From IBAN is required for ATM withdrawal");
+        enforceSourceAccountOwnership(currentUser, account);
+
+        return enforceTransferValidation(account, request.amount(), totalTransferredAmount);
     }
 
+    public void validateAtmDeposit(
+            User currentUser,
+            TransferRequest request,
+            Account account
+    ) {
+        enforceAuthenticatedUser(currentUser);
+        enforceApprovedUser(currentUser);
+        enforceCustomer(currentUser);
+        enforceRequiredIban(request.toIban(), "To IBAN is required for ATM deposit");
+        enforceSourceAccountOwnership(currentUser, account);
+    }
     private void enforceAuthenticatedUser(User currentUser) {
         if (currentUser == null) {
             throw new UnauthorizedException("Not authenticated");
+        }
+    }
+    private void enforceRequiredIban(String iban, String message) {
+        if (iban == null || iban.isBlank()) {
+            throw new ConflictException(message);
+        }
+    }
+
+    private void enforceCustomer(User currentUser) {
+        if (currentUser.getRole() != UserRole.CUSTOMER) {
+            throw new ForbiddenException("Only customers can use ATM transactions");
         }
     }
 
