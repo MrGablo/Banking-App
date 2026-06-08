@@ -39,7 +39,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void registerSuccessfully() {
+    void register_succeeds() {
         RegisterRequest request = validRequest();
         User user = new User();
 
@@ -53,7 +53,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void registerThrowsWhenEmailExists() {
+    void register_throwsForEmail() {
         RegisterRequest request = validRequest();
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(new User()));
 
@@ -62,7 +62,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void registerThrowsWhenBsnExists() {
+    void register_throwsForBsn() {
         RegisterRequest request = validRequest();
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.empty());
         when(userRepository.findByBsn(request.bsn())).thenReturn(Optional.of(new User()));
@@ -72,7 +72,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void registerThrowsWhenPhoneNumberExists() {
+    void register_throwsForPhone() {
         RegisterRequest request = validRequest();
         when(userRepository.findByEmail(request.email())).thenReturn(Optional.empty());
         when(userRepository.findByBsn(request.bsn())).thenReturn(Optional.empty());

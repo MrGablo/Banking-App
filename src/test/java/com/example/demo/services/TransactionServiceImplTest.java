@@ -89,7 +89,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void getTransactionByIdReturnsTransaction() {
+    void getTransactionById_returnsTransaction() {
         when(transactionRepository.findById(1L)).thenReturn(Optional.of(transaction));
 
         Optional<Transaction> result = transactionService.getTransactionById(1L);
@@ -99,14 +99,14 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void getTransactionByIdReturnsEmptyWhenNotFound() {
+    void getTransactionById_returnsEmpty() {
         when(transactionRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertTrue(transactionService.getTransactionById(99L).isEmpty());
     }
 
     @Test
-    void addTransactionSavesAndReturns() {
+    void addTransaction_savesTransaction() {
         when(transactionRepository.save(transaction)).thenReturn(transaction);
 
         Transaction result = transactionService.addTransaction(transaction);
@@ -116,7 +116,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void getAllTransactionsReturnsPage() {
+    void getAllTransactions_returnsPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Transaction> page = new PageImpl<>(List.of(transaction));
         when(transactionRepository.findAll(pageable)).thenReturn(page);
@@ -127,7 +127,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void getTransactionsForAccountThrowsWhenAccountNotFound() {
+    void getTransactionsForAccount_throwsNotFound() {
         when(accountRepository.existsByIban("NL01INHO0000000000")).thenReturn(false);
 
         assertThrows(NotFoundException.class,
@@ -135,7 +135,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void getTransactionsForAccountReturnsPage() {
+    void getTransactionsForAccount_returnsPage() {
         Pageable pageable = PageRequest.of(0, 10);
         when(accountRepository.existsByIban("NL01INHO0111111111")).thenReturn(true);
         Page<Transaction> page = new PageImpl<>(List.of(transaction));
@@ -148,7 +148,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void transferCheckingToCheckingSuccess() {
+    void transferChecking_succeeds() {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("100.00"), "Test");
 
@@ -169,7 +169,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void transferThrowsWhenUserNotFound() {
+    void transfer_throwsNotFound() {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("100.00"), "Test");
 
@@ -180,7 +180,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void transferBetweenOwnAccountsSuccess() {
+    void transferOwnAccounts_succeeds() {
         TransferRequest request = new TransferRequest("NL01INHO0111111111", "NL01INHO0222222222",
                 new BigDecimal("100.00"), "Test");
 
@@ -200,7 +200,7 @@ class TransactionServiceImplTest {
     }
 
     @Test
-    void transferRejectsUnauthorizedCustomer() {
+    void transfer_rejectsCustomer() {
         User customer = new User();
         customer.setId(2L);
         customer.setEmail("customer@test.com");
