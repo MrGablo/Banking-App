@@ -1,10 +1,12 @@
 package com.example.demo.controllers;
 
+import com.example.demo.common.enums.UserRole;
 import com.example.demo.common.pagination.PageResponse;
 import com.example.demo.dtos.AccountResponse;
 import com.example.demo.dtos.MessageResponse;
 import com.example.demo.dtos.TransactionResponse;
 import com.example.demo.dtos.UpdateLimitsRequest;
+import com.example.demo.entity.User;
 import com.example.demo.services.AccountService;
 import com.example.demo.services.TransactionService;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -48,12 +51,19 @@ public class AccountController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'ADMIN')")
     public PageResponse<AccountResponse> getAllAccounts(
+            @AuthenticationPrincipal User currentUser,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        PageRequest pageRequest = PageRequest.of(page, Math.min(size, maxPaginationSize));
+
+        if (currentUser.getRole() == UserRole.CUSTOMER) {
+            return PageResponse.of(accountService.getAccountsForOwner(currentUser.getId(), pageRequest));
+        }
+
         return PageResponse.of(
-                accountService.getAllAccounts(PageRequest.of(page, Math.min(size, maxPaginationSize)))
+                accountService.getAllAccounts(pageRequest)
         );
     }
 

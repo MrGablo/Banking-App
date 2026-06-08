@@ -151,6 +151,20 @@ class AccountControllerTest {
     }
 
     @Test
+    void getAllAccountsReturnsCurrentCustomerAccounts() throws Exception {
+        AccountResponse response = new AccountResponse("NL03INHO1234567890", AccountType.CHECKING,
+                new BigDecimal("300.00"), new BigDecimal("100.00"), new BigDecimal("200.00"), true, 2L, "Jane Doe");
+
+        when(accountService.getAccountsForOwner(eq(2L), any())).thenReturn(new PageImpl<>(List.of(response)));
+
+        mockMvc.perform(get("/api/v1/accounts")
+                        .with(authentication(customerAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].iban").value("NL03INHO1234567890"))
+                .andExpect(jsonPath("$.content[0].ownerId").value(2));
+    }
+
+    @Test
     void getAllAccountsForbiddenWithoutAuth() throws Exception {
         mockMvc.perform(get("/api/v1/accounts"))
                 .andExpect(status().isForbidden());

@@ -19,5 +19,7 @@ public interface AccountService {
     public void updateLimits(String iban, UpdateLimitsRequest request);
 
     public Page<AccountResponse> getAllAccounts(Pageable pageable);
+
+    public Page<AccountResponse> getAccountsForOwner(Long ownerId, Pageable pageable);
 }
 

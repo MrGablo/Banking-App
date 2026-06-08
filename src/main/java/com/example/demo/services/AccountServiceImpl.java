@@ -65,5 +65,11 @@ public class AccountServiceImpl implements AccountService {
                 .map(AccountResponse::from);
     }
 
+    @Override
+    public Page<AccountResponse> getAccountsForOwner(Long ownerId, Pageable pageable) {
+        return accountRepository.findByOwnerId(ownerId, pageable)
+                .map(AccountResponse::from);
+    }
+
 }
 
