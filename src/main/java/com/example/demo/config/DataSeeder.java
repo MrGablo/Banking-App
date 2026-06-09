@@ -107,9 +107,20 @@ public class DataSeeder implements CommandLineRunner {
             thirdAccount.setCurrency(Currency.EURO);
             thirdAccount.setOwner(demoUser);
 
+            Account janeSavingsAccount = new Account();
+            janeSavingsAccount.setIban("NL04INHO1122334455");
+            janeSavingsAccount.setType(AccountType.SAVINGS);
+            janeSavingsAccount.setBalance(BigDecimal.valueOf(15000.00));
+            janeSavingsAccount.setAbsoluteLimit(BigDecimal.valueOf(500));
+            janeSavingsAccount.setDailyLimit(BigDecimal.valueOf(1000.00));
+            janeSavingsAccount.setActive(true);
+            janeSavingsAccount.setCurrency(Currency.EURO);
+            janeSavingsAccount.setOwner(demoUser);
+
             accountRepository.save(firstAccount);
             accountRepository.save(secondAccount);
             accountRepository.save(thirdAccount);
+            accountRepository.save(janeSavingsAccount);
 
             Transaction firstTransaction = new Transaction();
             firstTransaction.setFromIban("NL01INHO0123456789");
